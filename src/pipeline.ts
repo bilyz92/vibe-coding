@@ -14,6 +14,10 @@ export type PipelineResult =
   | { status: "gave_up"; reason: string };
 
 function gitDiff(repoRoot: string): string {
+  // --intent-to-add marks new files as tracked (empty blob) without staging
+  // their content, so `git diff HEAD` includes them as additions — a plain
+  // `git diff HEAD` silently omits untracked files entirely.
+  execFileSync("git", ["add", "-A", "-N"], { cwd: repoRoot });
   return execFileSync("git", ["diff", "HEAD"], { cwd: repoRoot, encoding: "utf-8" });
 }
 
