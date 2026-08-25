@@ -1,0 +1,8 @@
+{
+  "denylist": ["prisma/migrations/**", ".env*", "lib/authz.ts", "node_modules/**", ".git/**"],
+  "bashAllowlist": ["git", "npm", "node", "ls", "cat", "grep"],
+  "lintCommand": "npm run lint",
+  "testCommand": "npm test",
+  "agentsFile": "AGENTS.md",
+  "maxRetries": 3
+}

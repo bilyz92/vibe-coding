@@ -1,0 +1,33 @@
+{
+  "name": "vibe-coding",
+  "version": "0.1.0",
+  "description": "Coding agent engine (Claude API) with enforced guardrails: path allowlist, verify-before-commit, adversarial review.",
+  "main": "src/cli.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "cli": "tsx src/cli.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bilyz92/vibe-coding.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/bilyz92/vibe-coding/issues"
+  },
+  "homepage": "https://github.com/bilyz92/vibe-coding#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.120.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.3.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  }
+}
