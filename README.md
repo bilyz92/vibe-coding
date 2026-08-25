@@ -46,6 +46,21 @@ retries on failure) → review (a second, independent Claude call adversarially 
 commit (harness runs `git add`/`git commit`, refusing anything denylisted). It stops after
 committing locally — pushing/PR creation is manual in this mode.
 
+## CI / automation mode
+
+Comment `/vibe-code <task>` on an issue in a repo with `.github/workflows/vibe-code.yml` installed
+(this repo has it — that's the reference install) and, if you're OWNER/MEMBER/COLLABORATOR on that
+repo, the workflow runs the same pipeline as the CLI, then pushes a branch and opens a PR back to
+the issue. The author-association check happens in `src/trigger.ts`, not just the workflow's `if:`
+— a public repo's issue comments come from anyone, so the workflow condition is only a cheap
+pre-filter.
+
+Required repo secrets: `ANTHROPIC_API_KEY` (the default `GITHUB_TOKEN` covers `gh pr create` /
+`gh issue comment`, already scoped via the workflow's `permissions:` block).
+
+To install on another repo: copy `.github/workflows/vibe-code.yml` and that repo's own
+`agent.config.json`, and add the `vibe-coding` package (or vendor `src/`) so `npm run ci` resolves.
+
 ## Development
 
 ```bash

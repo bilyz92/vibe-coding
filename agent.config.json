@@ -1,0 +1,8 @@
+{
+  "denylist": [".env*", "node_modules/**", ".git/**", "agent.config.json"],
+  "bashAllowlist": ["git", "npm", "node", "ls", "cat", "grep"],
+  "lintCommand": "npm run build",
+  "testCommand": "npm test",
+  "agentsFile": "AGENTS.md",
+  "maxRetries": 3
+}
