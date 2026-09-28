@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { loadRepoConfig } from "./config.js";
-import { childEnv } from "./env.js";
+import { isolationProblems, takeApiKeyFile } from "./env.js";
+import { harnessGit } from "./git.js";
 import { runPipeline } from "./pipeline.js";
 import { parseTrigger } from "./trigger.js";
 
@@ -15,14 +15,24 @@ const ALLOWED_ASSOCIATIONS = ["OWNER", "MEMBER", "COLLABORATOR"];
  * $VIBE_RESULT_DIR (`status`, plus `reason` or `change.patch`). It holds no
  * GitHub write credentials: this job runs model-written code, so pushing,
  * opening the PR and commenting happen in a separate job (see
- * .github/workflows/vibe-code.yml) that never executes any of it.
+ * .github/workflows/vibe-code.yml) that never executes any of it and
+ * re-checks the patch itself (src/check-commit.ts). The API key is read from
+ * a file that is deleted before any child process starts.
  */
 async function main() {
   const eventPath = process.env.GITHUB_EVENT_PATH;
   const resultDir = process.env.VIBE_RESULT_DIR;
-  if (!eventPath || !resultDir) {
-    throw new Error("GITHUB_EVENT_PATH / VIBE_RESULT_DIR not set — this entrypoint only runs inside GitHub Actions");
+  const keyFile = process.env.ANTHROPIC_API_KEY_FILE;
+  if (!eventPath || !resultDir || !keyFile) {
+    throw new Error(
+      "GITHUB_EVENT_PATH / VIBE_RESULT_DIR / ANTHROPIC_API_KEY_FILE not set — this entrypoint only runs inside GitHub Actions",
+    );
   }
+  const problems = isolationProblems();
+  if (problems.length > 0) {
+    throw new Error(`refusing to run model-written code next to the API key:\n- ${problems.join("\n- ")}`);
+  }
+  const apiKey = takeApiKeyFile(keyFile);
   mkdirSync(resultDir, { recursive: true });
   const event = JSON.parse(readFileSync(eventPath, "utf-8"));
 
@@ -35,14 +45,10 @@ async function main() {
 
   const repoRoot = process.cwd();
   const config = loadRepoConfig(repoRoot);
-  const result = await runPipeline(new Anthropic(), repoRoot, config, trigger.task);
+  const result = await runPipeline(new Anthropic({ apiKey }), repoRoot, config, trigger.task);
 
   if (result.status === "committed") {
-    const patch = execFileSync("git", ["format-patch", "-1", "HEAD", "--stdout"], {
-      cwd: repoRoot,
-      encoding: "utf-8",
-      env: childEnv(),
-    });
+    const patch = harnessGit(repoRoot, ["format-patch", "-1", "HEAD", "--stdout"]);
     writeFileSync(join(resultDir, "change.patch"), patch);
   } else if (result.status === "gave_up") {
     writeFileSync(join(resultDir, "reason"), result.reason);

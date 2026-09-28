@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
 import { loadRepoConfig } from "./config.js";
 import { MAX_TOOL_TURNS } from "./implement.js";
-import { runPipeline } from "./pipeline.js";
+import { MAX_REVIEW_DIFF_CHARS, runPipeline } from "./pipeline.js";
 import { MAX_FEEDBACK_CHARS } from "./truncate.js";
 
 let repoRoot: string;
@@ -218,14 +218,45 @@ describe("runPipeline (mocked Claude client)", () => {
     return { client: { messages: { create, parse } } as unknown as Anthropic, create, parse };
   }
 
-  it("never sends a denylisted file's contents to the reviewer", async () => {
+  it("gives up before review when a denylisted file changed, so its contents never reach the API", async () => {
     writeFileSync(join(repoRoot, ".env"), "SECRET=super-secret-value");
     const { client, parse } = clientCreating("hello.txt");
 
-    await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "create hello.txt");
+    const result = await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "create hello.txt");
 
-    expect(JSON.stringify(parse.mock.calls[0][0].messages)).not.toContain("super-secret-value");
-    expect(JSON.stringify(parse.mock.calls[0][0].messages)).toContain("hello.txt");
+    expect(result).toEqual({ status: "gave_up", reason: "denylisted files changed: .env" });
+    expect(parse).not.toHaveBeenCalled();
+  });
+
+  it("does not leak a denylisted file's contents through a rename", async () => {
+    writeFileSync(join(repoRoot, ".env"), "SECRET=super-secret-value");
+    execSync("git add -f .env && git commit -qm env && git mv .env leaked.txt", { cwd: repoRoot });
+    const { client, parse } = clientCreating("hello.txt");
+
+    const result = await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "create hello.txt");
+
+    expect(result.status).toBe("gave_up");
+    expect(parse).not.toHaveBeenCalled();
+  });
+
+  it("gives up instead of crashing when the diff exceeds the subprocess buffer", async () => {
+    writeFileSync(join(repoRoot, "huge.txt"), "y\n".repeat(MAX_REVIEW_DIFF_CHARS * 4));
+    const { client, parse } = clientCreating("hello.txt");
+
+    const result = await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "create hello.txt");
+
+    expect(result.status).toBe("gave_up");
+    expect(parse).not.toHaveBeenCalled();
+  });
+
+  it("gives up instead of sending an oversized diff to the reviewer", async () => {
+    writeFileSync(join(repoRoot, "big.txt"), "x\n".repeat(MAX_REVIEW_DIFF_CHARS));
+    const { client, parse } = clientCreating("hello.txt");
+
+    const result = await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "create hello.txt");
+
+    expect(result.status).toBe("gave_up");
+    expect(parse).not.toHaveBeenCalled();
   });
 
   it("leaves the target repo's index untouched when it gives up", async () => {

@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -6,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { RepoConfig } from "./config.js";
 import { changedFiles, commitChanges } from "./commit.js";
 import { childEnv } from "./env.js";
+import { harnessGit } from "./git.js";
 import { checkPath } from "./guard.js";
 import { implement, ToolTurnLimitError } from "./implement.js";
 import { review } from "./review.js";
@@ -17,26 +17,30 @@ export type PipelineResult =
   | { status: "no_changes" }
   | { status: "gave_up"; reason: string };
 
+/** Diffs larger than this are refused rather than truncated: a reviewer that sees part of a change must not approve all of it. */
+export const MAX_REVIEW_DIFF_CHARS = 400_000;
+
 /**
- * Diff of `files` against HEAD, for the reviewer. Denylisted files are left
- * out so their contents (e.g. an un-ignored .env) never reach the API.
+ * Diff of `files` (already denylist-checked) against HEAD, for the reviewer.
  * --intent-to-add is needed for untracked files to show up in `git diff HEAD`;
  * it is applied to a throwaway copy of the index so the target repo's real
  * index is left exactly as it was, even if the pipeline gives up.
  */
-function reviewableDiff(repoRoot: string, config: RepoConfig, files: string[]): string {
-  const reviewable = files.filter((file) => checkPath(repoRoot, config.denylist, file).ok);
-  if (reviewable.length === 0) return "";
-
-  const git = (args: string[], env: NodeJS.ProcessEnv) =>
-    execFileSync("git", args, { cwd: repoRoot, encoding: "utf-8", env });
-  const realIndex = resolve(repoRoot, git(["rev-parse", "--git-path", "index"], childEnv()).trim());
+function reviewDiff(repoRoot: string, files: string[]): string | null {
+  const realIndex = resolve(repoRoot, harnessGit(repoRoot, ["rev-parse", "--git-path", "index"]).trim());
   const tempDir = mkdtempSync(join(tmpdir(), "vibe-coding-index-"));
   const env = { ...childEnv(), GIT_INDEX_FILE: join(tempDir, "index") };
   try {
     if (existsSync(realIndex)) copyFileSync(realIndex, env.GIT_INDEX_FILE);
-    git(["add", "-A", "-N", "--", ...reviewable], env);
-    return git(["diff", "HEAD", "--", ...reviewable], env);
+    harnessGit(repoRoot, ["add", "-A", "-N", "--", ...files], { env });
+    // A UTF-8 char is at most 4 bytes, so anything past this buffer is over the limit anyway.
+    return harnessGit(repoRoot, ["diff", "--no-ext-diff", "--no-textconv", "HEAD", "--", ...files], {
+      env,
+      maxBuffer: MAX_REVIEW_DIFF_CHARS * 4,
+    });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOBUFS") return null;
+    throw error;
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
   }
@@ -104,7 +108,16 @@ export async function runPipeline(
     if (files.length === 0) {
       return { status: "no_changes" };
     }
-    const diff = reviewableDiff(repoRoot, config, files);
+    // Checked before review, not just at commit: a denylisted file's contents
+    // (directly, or via a rename to an allowed path) must never reach the API.
+    const denied = files.filter((file) => !checkPath(repoRoot, config.denylist, file).ok);
+    if (denied.length > 0) {
+      return { status: "gave_up", reason: `denylisted files changed: ${denied.join(", ")}` };
+    }
+    const diff = reviewDiff(repoRoot, files);
+    if (diff === null || diff.length > MAX_REVIEW_DIFF_CHARS) {
+      return { status: "gave_up", reason: `diff too large to review (over ${MAX_REVIEW_DIFF_CHARS} chars)` };
+    }
 
     // Minor findings are advisory: retrying on them can burn every retry on
     // nitpicks and end in gave_up for an otherwise correct change.

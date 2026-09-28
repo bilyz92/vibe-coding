@@ -51,13 +51,21 @@ committing locally — pushing/PR creation is manual in this mode.
 Comment `/vibe-code <task>` on an issue in a repo with `.github/workflows/vibe-code.yml` installed
 (this repo has it — that's the reference install) and, if you're OWNER/MEMBER/COLLABORATOR on that
 repo, the workflow runs the same pipeline as the CLI, then pushes a branch and opens a PR back to
-the issue. It is split into two jobs: `agent` runs the pipeline (and therefore model-written code)
-with read-only access and no GitHub token, and hands its result over as an artifact; `publish`
-holds the write token but only applies the patch and runs `git`/`gh`. Every child process the
-harness spawns has credential-like env vars (`*TOKEN*`, `*SECRET*`, `*PASSWORD*`, `*API_KEY*`)
-stripped — see `src/env.ts`. The author-association check happens in `src/trigger.ts`, not just the workflow's `if:`
-— a public repo's issue comments come from anyone, so the workflow condition is only a cheap
-pre-filter.
+the issue. It is split into two jobs:
+
+- `agent` runs the pipeline — and therefore model-written code — with read-only access and no
+  GitHub token. The API key reaches the harness as a file that it deletes before spawning anything,
+  and the harness refuses to start unless children cannot reach its memory or become root
+  (`--disable-sigusr1`, `kernel.yama.ptrace_scope >= 1`, `no_new_privs` so passwordless `sudo`
+  is dead, docker stopped; see `isolationProblems` in `src/env.ts`).
+- `publish` holds the write token but runs no model-written code. The `agent` job's artifact is
+  untrusted (model-written code ran there and could have rewritten it), so `publish` re-checks the
+  applied patch against the *base commit's* denylist (`src/check-commit.ts`) before pushing.
+
+Child processes also get credential-like env vars (`*TOKEN*`, `*SECRET*`, `*PASSWORD*`,
+`*API_KEY*`) stripped, but that is hygiene, not isolation: **local CLI mode does not isolate
+model-written code** — it runs as you, with your files, SSH agent and `gh`/git credentials in
+reach. Only run it on tasks and repos you would run arbitrary code from.
 
 Required repo secrets: `ANTHROPIC_API_KEY` (the default `GITHUB_TOKEN` covers `gh pr create` /
 `gh issue comment`, and is only given to the `publish` job).
