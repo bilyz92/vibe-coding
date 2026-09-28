@@ -8,7 +8,7 @@ import type { RepoConfig } from "./config.js";
 let repoRoot: string;
 const config: RepoConfig = {
   denylist: [".env*", "secrets/**"],
-  bashAllowlist: ["echo", "ls"],
+  bashAllowlist: ["echo", "ls", "printenv"],
   lintCommand: "true",
   testCommand: "true",
   agentsFile: "AGENTS.md",
@@ -71,6 +71,16 @@ describe("runBash", () => {
     const result = runBash(repoRoot, config, "echo hello");
     expect(result.isError).toBe(false);
     expect(result.output).toContain("hello");
+  });
+
+  it("does not expose the harness's credentials to the command", () => {
+    process.env.GH_TOKEN = "gh-secret";
+    try {
+      const result = runBash(repoRoot, config, "printenv GH_TOKEN");
+      expect(result.output).not.toContain("gh-secret");
+    } finally {
+      delete process.env.GH_TOKEN;
+    }
   });
 
   it("blocks a non-allowlisted command", () => {

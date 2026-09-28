@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { checkBashArgs, checkBashCommand, checkPath } from "./guard.js";
 import type { RepoConfig } from "./config.js";
+import { childEnv } from "./env.js";
 
 export type ToolResult = { output: string; isError: boolean };
 
@@ -18,7 +19,7 @@ export function runBash(repoRoot: string, config: RepoConfig, command: string): 
   if (!argsGuard.ok) {
     return { output: `blocked: ${argsGuard.reason}`, isError: true };
   }
-  const result = spawnSync(executable, args, { cwd: repoRoot, encoding: "utf-8", shell: false });
+  const result = spawnSync(executable, args, { cwd: repoRoot, encoding: "utf-8", shell: false, env: childEnv() });
 
   if (result.error) {
     return { output: `exec failed: ${result.error.message}`, isError: true };

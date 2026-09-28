@@ -1,6 +1,6 @@
-import { execFileSync } from "node:child_process";
 import { checkPath } from "./guard.js";
 import type { RepoConfig } from "./config.js";
+import { harnessGit } from "./git.js";
 
 export type CommitResult = { committed: boolean; blocked: string[] };
 
@@ -11,11 +11,8 @@ export type CommitResult = { committed: boolean; blocked: string[] };
  * contributes its source path too (renaming a denylisted file away is a
  * change to it).
  */
-function changedFiles(repoRoot: string): string[] {
-  const output = execFileSync("git", ["status", "--porcelain", "-z", "--untracked-files=all"], {
-    cwd: repoRoot,
-    encoding: "utf-8",
-  });
+export function changedFiles(repoRoot: string): string[] {
+  const output = harnessGit(repoRoot, ["status", "--porcelain", "-z", "--untracked-files=all"]);
   const entries = output.split("\0");
   const files: string[] = [];
   for (let i = 0; i < entries.length; i++) {
@@ -46,7 +43,7 @@ export function commitChanges(repoRoot: string, config: RepoConfig, message: str
     return { committed: false, blocked };
   }
 
-  execFileSync("git", ["add", "--", ...files], { cwd: repoRoot });
-  execFileSync("git", ["commit", "-m", message], { cwd: repoRoot });
+  harnessGit(repoRoot, ["add", "--", ...files]);
+  harnessGit(repoRoot, ["commit", "--no-verify", "-m", message]);
   return { committed: true, blocked: [] };
 }

@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -70,6 +70,49 @@ describe("commitChanges", () => {
     expect(result.committed).toBe(true);
     const tracked = execSync("git -c core.quotepath=off ls-files", { cwd: repoRoot }).toString();
     expect(tracked).toContain("tài liệu.ts");
+  });
+
+  it("does not expose the harness's credentials to git hooks", () => {
+    const hooks = join(repoRoot, "hooks");
+    mkdirSync(hooks);
+    const leak = join(repoRoot, "leaked.txt");
+    writeFileSync(join(hooks, "pre-commit"), `#!/bin/sh\nprintenv GH_TOKEN > "${leak}"\nexit 0\n`, { mode: 0o755 });
+    execSync("git config core.hooksPath hooks", { cwd: repoRoot });
+    writeFileSync(join(repoRoot, "app.ts"), "export {}");
+    process.env.GH_TOKEN = "gh-secret";
+    try {
+      commitChanges(repoRoot, config, "feat: add app.ts");
+    } finally {
+      delete process.env.GH_TOKEN;
+    }
+    expect(existsSync(leak) ? readFileSync(leak, "utf-8") : "").not.toContain("gh-secret");
+  });
+
+  it("does not run repo hooks that could stage denylisted files after the check", () => {
+    const hooks = join(repoRoot, "hooks");
+    mkdirSync(hooks);
+    writeFileSync(join(hooks, "pre-commit"), "#!/bin/sh\necho SECRET=1 > .env\ngit add -f .env\n", { mode: 0o755 });
+    execSync("git add hooks && git commit -qm hooks && git config core.hooksPath hooks", { cwd: repoRoot });
+    writeFileSync(join(repoRoot, "app.ts"), "export {}");
+
+    commitChanges(repoRoot, config, "feat: add app.ts");
+
+    const committed = execSync("git show --name-only --format= HEAD", { cwd: repoRoot }).toString();
+    expect(committed).not.toContain(".env");
+  });
+
+  it("never runs a repo-configured fsmonitor while checking and committing", () => {
+    const marker = join(repoRoot, "..", `fsmonitor-ran-${Date.now()}`);
+    writeFileSync(join(repoRoot, "fsm.sh"), `#!/bin/sh\ntouch "${marker}"\nexit 1\n`, { mode: 0o755 });
+    execSync("git add fsm.sh && git commit -qm fsm && git config core.fsmonitor ./fsm.sh", { cwd: repoRoot });
+    writeFileSync(join(repoRoot, "app.ts"), "export {}");
+
+    try {
+      commitChanges(repoRoot, config, "feat: add app.ts");
+      expect(existsSync(marker)).toBe(false);
+    } finally {
+      rmSync(marker, { force: true });
+    }
   });
 
   it("does nothing when there are no changes", () => {

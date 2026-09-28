@@ -4,12 +4,13 @@ on:
   issue_comment:
     types: [created]
 
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-
 jobs:
+  # Runs the agent. This job executes model-written code (the bash tool,
+  # lint/test), so it gets read-only repo access, no persisted git
+  # credentials and no GH_TOKEN. The API key reaches the harness as a file it
+  # deletes before spawning anything, and the harness refuses to run unless
+  # children cannot reach its memory or become root (see isolationProblems in
+  # src/env.ts).
   agent:
     # Cheap pre-filter only — the real authorization check (author_association)
     # happens in src/trigger.ts, since this job condition alone cannot be
@@ -18,12 +19,16 @@ jobs:
       startsWith(github.event.comment.body, '/vibe-code') &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22 # --disable-sigusr1 needs >= 22.14
 
       - run: npm ci
 
@@ -31,7 +36,104 @@ jobs:
           git config user.name "vibe-coding-bot"
           git config user.email "vibe-coding-bot@users.noreply.github.com"
 
-      - run: npm run ci
+      # Hosted runners give this user root via passwordless sudo and the docker
+      # group; model-written code must not be able to become root and read the
+      # harness's memory. Docker is stopped here, and the harness runs under
+      # no_new_privs so sudo/setuid cannot elevate (checked at startup).
+      - run: |
+          sudo systemctl stop docker.socket docker.service
+          sudo rm -f /var/run/docker.sock
+
+      - env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: install -m 600 /dev/null "$RUNNER_TEMP/anthropic-key" && printf '%s' "$KEY" > "$RUNNER_TEMP/anthropic-key"
+
+      - run: setpriv --no-new-privs npm run ci
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY_FILE: ${{ runner.temp }}/anthropic-key
+          VIBE_RESULT_DIR: ${{ runner.temp }}/vibe-result
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vibe-result
+          path: ${{ runner.temp }}/vibe-result
+          if-no-files-found: ignore
+
+  # Publishes the result. Holds the write token but runs no model-written
+  # code: harness tooling comes from a separate checkout of the base commit,
+  # the patch is applied in another, and it is re-checked against the base
+  # commit's denylist before anything is pushed — the artifact comes from a job
+  # that ran model-written code, so it is not trusted. The issue number and task
+  # come from the event, not from the artifact.
+  publish:
+    needs: agent
+    if: always() && needs.agent.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: harness
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+        working-directory: harness
+
+      - uses: actions/checkout@v4
+        with:
+          path: target
+
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vibe-result
+          path: ${{ runner.temp }}/vibe-result
+
+      - working-directory: target
+        env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ github.event.issue.number }}
+          COMMENT: ${{ github.event.comment.body }}
+          RESULT: ${{ runner.temp }}/vibe-result
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          task="$(printf '%s' "${COMMENT#/vibe-code}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+          case "$(cat "$RESULT/status" 2>/dev/null || echo missing)" in
+            committed)
+              git config user.name "vibe-coding-bot"
+              git config user.email "vibe-coding-bot@users.noreply.github.com"
+              branch="vibe-coding/issue-${ISSUE}-${GITHUB_RUN_ID}"
+              git checkout -b "$branch"
+              git am "$RESULT/change.patch"
+              target="$PWD"
+              if ! blocked="$(cd ../harness && node --import tsx src/check-commit.ts "$target" "$GITHUB_SHA" 2>&1)"; then
+                gh issue comment "$ISSUE" --body "Refused to publish: $blocked"
+                exit 1
+              fi
+              git push -u origin "$branch"
+              url="$(gh pr create --head "$branch" --title "$task" --body "Closes #${ISSUE}"$'\n\n'"Task: ${task}")"
+              gh issue comment "$ISSUE" --body "Opened $url"
+              ;;
+            no_changes)
+              gh issue comment "$ISSUE" --body "No changes were needed for this task."
+              ;;
+            gave_up)
+              gh issue comment "$ISSUE" --body "Gave up: $(cat "$RESULT/reason")"
+              ;;
+            skipped)
+              echo "nothing to publish"
+              ;;
+            *)
+              gh issue comment "$ISSUE" --body "The agent run failed before producing a result: $RUN_URL"
+              exit 1
+              ;;
+          esac
