@@ -4,15 +4,30 @@ import type { RepoConfig } from "./config.js";
 
 export type CommitResult = { committed: boolean; blocked: string[] };
 
+/**
+ * Lists every changed path, one per file: `-z` keeps names unquoted (git
+ * otherwise quotes/escapes non-ASCII names), `--untracked-files=all` expands
+ * a new directory into its files so each is denylist-checked, and a rename
+ * contributes its source path too (renaming a denylisted file away is a
+ * change to it).
+ */
 function changedFiles(repoRoot: string): string[] {
-  const output = execFileSync("git", ["status", "--porcelain"], {
+  const output = execFileSync("git", ["status", "--porcelain", "-z", "--untracked-files=all"], {
     cwd: repoRoot,
     encoding: "utf-8",
   });
-  return output
-    .split("\n")
-    .map((line) => line.slice(3).trim())
-    .filter(Boolean);
+  const entries = output.split("\0");
+  const files: string[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    if (!entry) continue;
+    files.push(entry.slice(3));
+    const status = entry.slice(0, 2);
+    if (status.includes("R") || status.includes("C")) {
+      files.push(entries[++i]);
+    }
+  }
+  return files;
 }
 
 /**
@@ -31,7 +46,7 @@ export function commitChanges(repoRoot: string, config: RepoConfig, message: str
     return { committed: false, blocked };
   }
 
-  execFileSync("git", ["add", ...files], { cwd: repoRoot });
+  execFileSync("git", ["add", "--", ...files], { cwd: repoRoot });
   execFileSync("git", ["commit", "-m", message], { cwd: repoRoot });
   return { committed: true, blocked: [] };
 }

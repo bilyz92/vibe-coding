@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -8,7 +8,7 @@ import type { RepoConfig } from "./config.js";
 
 let repoRoot: string;
 const config: RepoConfig = {
-  denylist: [".env*"],
+  denylist: [".env*", "secrets/**"],
   bashAllowlist: [],
   lintCommand: "true",
   testCommand: "true",
@@ -43,6 +43,33 @@ describe("commitChanges", () => {
     const result = commitChanges(repoRoot, config, "feat: oops");
     expect(result.committed).toBe(false);
     expect(result.blocked).toContain(".env");
+  });
+
+  it("refuses to commit a denylisted file inside a brand-new untracked directory", () => {
+    mkdirSync(join(repoRoot, "secrets"));
+    writeFileSync(join(repoRoot, "secrets", "key.pem"), "PRIVATE");
+    const result = commitChanges(repoRoot, config, "feat: oops");
+    expect(result.committed).toBe(false);
+    expect(result.blocked).toContain("secrets/key.pem");
+    const tracked = execSync("git ls-files", { cwd: repoRoot }).toString();
+    expect(tracked).not.toContain("secrets/key.pem");
+  });
+
+  it("refuses to commit a rename whose source is denylisted", () => {
+    writeFileSync(join(repoRoot, ".env"), "SECRET=1");
+    execSync("git add -f .env && git commit -m env", { cwd: repoRoot });
+    execSync("git mv .env leaked.txt", { cwd: repoRoot });
+    const result = commitChanges(repoRoot, config, "feat: rename");
+    expect(result.committed).toBe(false);
+    expect(result.blocked).toContain(".env");
+  });
+
+  it("commits a file whose name contains non-ASCII characters", () => {
+    writeFileSync(join(repoRoot, "tài liệu.ts"), "export {}");
+    const result = commitChanges(repoRoot, config, "feat: spaced");
+    expect(result.committed).toBe(true);
+    const tracked = execSync("git -c core.quotepath=off ls-files", { cwd: repoRoot }).toString();
+    expect(tracked).toContain("tài liệu.ts");
   });
 
   it("does nothing when there are no changes", () => {

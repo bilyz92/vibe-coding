@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -76,6 +76,19 @@ describe("runBash", () => {
   it("blocks a non-allowlisted command", () => {
     const result = runBash(repoRoot, config, "curl http://example.com");
     expect(result.isError).toBe(true);
+  });
+
+  it("blocks reading a denylisted file through an allowlisted command", () => {
+    writeFileSync(join(repoRoot, ".env"), "SECRET=1");
+    const result = runBash(repoRoot, config, "ls .env");
+    expect(result.isError).toBe(true);
+    expect(result.output).toContain("blocked");
+  });
+
+  it("blocks command arguments pointing outside the repo root", () => {
+    const result = runBash(repoRoot, config, "ls /etc");
+    expect(result.isError).toBe(true);
+    expect(result.output).toContain("blocked");
   });
 
   it("blocks command chaining and does not execute the tail command", () => {

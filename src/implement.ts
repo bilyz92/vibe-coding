@@ -4,6 +4,15 @@ import { runBash, runTextEditor } from "./tools.js";
 
 const MODEL = "claude-opus-5";
 
+/** Upper bound on model turns per implement() call, so a model that never stops calling tools cannot burn tokens forever. */
+export const MAX_TOOL_TURNS = 50;
+
+export class ToolTurnLimitError extends Error {
+  constructor() {
+    super(`implement exceeded ${MAX_TOOL_TURNS} tool turns without finishing`);
+  }
+}
+
 const TOOLS = [
   { type: "text_editor_20250728" as const, name: "str_replace_based_edit_tool" as const },
   { type: "bash_20250124" as const, name: "bash" as const },
@@ -23,7 +32,7 @@ export async function implement(
 ): Promise<Anthropic.MessageParam[]> {
   const history = [...messages];
 
-  while (true) {
+  for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: 16000,
@@ -57,4 +66,6 @@ export async function implement(
 
     history.push({ role: "user", content: toolResults });
   }
+
+  throw new ToolTurnLimitError();
 }

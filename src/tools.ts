@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { checkBashCommand, checkPath } from "./guard.js";
+import { checkBashArgs, checkBashCommand, checkPath } from "./guard.js";
 import type { RepoConfig } from "./config.js";
 
 export type ToolResult = { output: string; isError: boolean };
@@ -14,6 +14,10 @@ export function runBash(repoRoot: string, config: RepoConfig, command: string): 
   }
 
   const [executable, ...args] = command.trim().split(/\s+/);
+  const argsGuard = checkBashArgs(repoRoot, config.denylist, args);
+  if (!argsGuard.ok) {
+    return { output: `blocked: ${argsGuard.reason}`, isError: true };
+  }
   const result = spawnSync(executable, args, { cwd: repoRoot, encoding: "utf-8", shell: false });
 
   if (result.error) {

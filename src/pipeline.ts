@@ -4,7 +4,7 @@ import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import type { RepoConfig } from "./config.js";
 import { commitChanges } from "./commit.js";
-import { implement } from "./implement.js";
+import { implement, ToolTurnLimitError } from "./implement.js";
 import { review } from "./review.js";
 import { verify } from "./verify.js";
 
@@ -52,7 +52,14 @@ export async function runPipeline(
   ];
 
   for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
-    messages = await implement(client, repoRoot, config, messages);
+    try {
+      messages = await implement(client, repoRoot, config, messages);
+    } catch (error) {
+      if (error instanceof ToolTurnLimitError) {
+        return { status: "gave_up", reason: error.message };
+      }
+      throw error;
+    }
 
     const verifyResult = verify(repoRoot, config);
     if (!verifyResult.passed) {
@@ -68,7 +75,9 @@ export async function runPipeline(
       return { status: "no_changes" };
     }
 
-    const findings = await review(client, diff);
+    // Minor findings are advisory: retrying on them can burn every retry on
+    // nitpicks and end in gave_up for an otherwise correct change.
+    const findings = (await review(client, diff)).filter((f) => f.severity === "blocking");
     if (findings.length > 0) {
       const summary = findings.map((f) => `- [${f.severity}] ${f.file}: ${f.summary}`).join("\n");
       messages.push({ role: "user", content: `Review found issues. Fix them.\n\n${summary}` });
