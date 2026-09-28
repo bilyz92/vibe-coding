@@ -1,0 +1,12 @@
+*.pyc
+__pycache__/
+.DS_Store
+node_modules/
+auto-upgrade/logs/
+auto-upgrade/DISABLED
+_bootstrap/bootstrap.log
+_bootstrap/sync.log
+_bootstrap/.opt-cli-tried
+gstack/
+.agents/
+.claude/

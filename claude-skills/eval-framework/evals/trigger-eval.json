@@ -1,0 +1,22 @@
+[
+  {"query": "vừa sửa lại skill dev-workflow, làm sao biết bản mới thật sự tốt hơn bản cũ chứ không phải tao tưởng thế", "should_trigger": true},
+  {"query": "tôi đổi prompt phân loại đơn từ trong HRM, muốn chắc là nó không làm hỏng mấy ca cũ đang chạy đúng", "should_trigger": true},
+  {"query": "so sánh 2 phiên bản prompt xem cái nào chính xác hơn, có số má đàng hoàng", "should_trigger": true},
+  {"query": "cần build bộ dataset test cho tính năng trích xuất thông tin CV bên recruitment", "should_trigger": true},
+  {"query": "agent của tôi thỉnh thoảng làm đúng thỉnh thoảng sai, tôi muốn đo tỉ lệ pass trên nhiều ca", "should_trigger": true},
+  {"query": "set up eval cho cái RAG trả lời câu hỏi nội quy công ty, xem nó có bịa không", "should_trigger": true},
+  {"query": "đổi từ model này sang model kia, làm benchmark xem có đáng không chậm hơn đắt hơn không", "should_trigger": true},
+  {"query": "tôi muốn chấm điểm chất lượng code mà agent sinh ra theo tiêu chí, lặp lại được giữa các lần", "should_trigger": true},
+  {"query": "how do I know my new classification prompt didn't regress the edge cases", "should_trigger": true},
+  {"query": "muốn có LLM-as-judge chấm mấy câu tóm tắt, nhưng sợ nó thiên vị câu dài", "should_trigger": true},
+  {"query": "review giúp tôi cái PR này trước khi merge", "should_trigger": false},
+  {"query": "code này viết ổn chưa, tên hàm với cấu trúc có sạch không", "should_trigger": false},
+  {"query": "chạy test suite của dự án xem có pass không", "should_trigger": false},
+  {"query": "đánh giá nhân viên quý này, xuất báo cáo KPI", "should_trigger": false},
+  {"query": "so sánh 2 file config xem khác nhau chỗ nào", "should_trigger": false},
+  {"query": "viết test cho hàm tính lương này", "should_trigger": false},
+  {"query": "tính năng chấm công đang tính sai giờ ra, debug giúp", "should_trigger": false},
+  {"query": "review UI màn hình đăng ký đơn xem có lỗi layout không", "should_trigger": false},
+  {"query": "audit bảo mật trước khi deploy", "should_trigger": false},
+  {"query": "phân tích yêu cầu nghiệp vụ cho tính năng nghỉ phép", "should_trigger": false}
+]
