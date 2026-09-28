@@ -7,6 +7,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { loadRepoConfig } from "./config.js";
 import { MAX_TOOL_TURNS } from "./implement.js";
 import { runPipeline } from "./pipeline.js";
+import { MAX_FEEDBACK_CHARS } from "./truncate.js";
 
 let repoRoot: string;
 
@@ -192,5 +193,74 @@ describe("runPipeline (mocked Claude client)", () => {
     await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "create hello.txt containing hi");
 
     expect(JSON.stringify(parse.mock.calls[0][0].messages)).toContain("create hello.txt containing hi");
+  });
+
+  /** implement() creates `path`, then stops; review is clean unless overridden. */
+  function clientCreating(path: string, findings: unknown[] = []) {
+    const create = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        create.mock.calls.length % 2 === 1
+          ? {
+              stop_reason: "tool_use",
+              content: [
+                {
+                  type: "tool_use",
+                  id: `tu_${create.mock.calls.length}`,
+                  name: "str_replace_based_edit_tool",
+                  input: { command: "create", path, file_text: "hi" },
+                },
+              ],
+            }
+          : { stop_reason: "end_turn", content: [{ type: "text", text: "done" }] },
+      ),
+    );
+    const parse = vi.fn().mockResolvedValue({ parsed_output: { findings } });
+    return { client: { messages: { create, parse } } as unknown as Anthropic, create, parse };
+  }
+
+  it("never sends a denylisted file's contents to the reviewer", async () => {
+    writeFileSync(join(repoRoot, ".env"), "SECRET=super-secret-value");
+    const { client, parse } = clientCreating("hello.txt");
+
+    await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "create hello.txt");
+
+    expect(JSON.stringify(parse.mock.calls[0][0].messages)).not.toContain("super-secret-value");
+    expect(JSON.stringify(parse.mock.calls[0][0].messages)).toContain("hello.txt");
+  });
+
+  it("leaves the target repo's index untouched when it gives up", async () => {
+    const blocking = [{ summary: "bad", file: "hello.txt", severity: "blocking" }];
+    const { client } = clientCreating("hello.txt", blocking);
+
+    const result = await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "create hello.txt");
+
+    expect(result.status).toBe("gave_up");
+    const status = execSync("git status --porcelain", { cwd: repoRoot }).toString();
+    expect(status).toContain("?? hello.txt");
+  });
+
+  it("truncates huge verify output before feeding it back to the model", async () => {
+    const config = { ...loadRepoConfig(repoRoot), testCommand: `node -e "process.stdout.write('x'.repeat(500000)); process.exit(1)"`, maxRetries: 0 };
+    const { client, create } = clientCreating("hello.txt");
+
+    await runPipeline(client, repoRoot, config, "create hello.txt");
+
+    // The failure output is appended to `messages` after the last create() call.
+    const history = create.mock.calls.at(-1)![0].messages as Anthropic.MessageParam[];
+    const lastUserText = JSON.stringify(history.at(-1));
+    expect(lastUserText.length).toBeLessThan(MAX_FEEDBACK_CHARS + 1000);
+  });
+
+  it("commits with a short subject line and the full task in the body", async () => {
+    const task = "add a hello.txt file " + "with a very long explanation ".repeat(10);
+    const { client } = clientCreating("hello.txt");
+
+    await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), task);
+
+    const subject = execSync("git log -1 --format=%s", { cwd: repoRoot }).toString().trim();
+    const body = execSync("git log -1 --format=%b", { cwd: repoRoot }).toString();
+    expect(subject.length).toBeLessThanOrEqual(72);
+    expect(subject.startsWith("add a hello.txt file")).toBe(true);
+    expect(body).toContain(task.trim());
   });
 });

@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { RepoConfig } from "./config.js";
 import { runBash, runTextEditor } from "./tools.js";
+import { truncateMiddle } from "./truncate.js";
 
 const MODEL = "claude-opus-5";
 
@@ -59,7 +60,7 @@ export async function implement(
       toolResults.push({
         type: "tool_result",
         tool_use_id: block.id,
-        content: result.output,
+        content: truncateMiddle(result.output),
         is_error: result.isError,
       });
     }

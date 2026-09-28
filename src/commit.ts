@@ -12,7 +12,7 @@ export type CommitResult = { committed: boolean; blocked: string[] };
  * contributes its source path too (renaming a denylisted file away is a
  * change to it).
  */
-function changedFiles(repoRoot: string): string[] {
+export function changedFiles(repoRoot: string): string[] {
   const output = execFileSync("git", ["status", "--porcelain", "-z", "--untracked-files=all"], {
     cwd: repoRoot,
     encoding: "utf-8",
