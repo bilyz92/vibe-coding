@@ -1,0 +1,6 @@
+# Định dạng: <marketplace_source> | <plugin@marketplace>
+# marketplace_source: repo github hoặc git url để `claude plugin marketplace add`
+anthropics/claude-plugins-official | frontend-design@claude-plugins-official
+anthropics/claude-plugins-official | skill-creator@claude-plugins-official
+anthropics/claude-plugins-official | superpowers@claude-plugins-official
+https://github.com/bilyz92/andrej-karpathy-skills.git | andrej-karpathy-skills@karpathy-skills
