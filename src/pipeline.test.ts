@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
 import { loadRepoConfig } from "./config.js";
+import { MAX_TOOL_TURNS } from "./implement.js";
 import { runPipeline } from "./pipeline.js";
 
 let repoRoot: string;
@@ -125,5 +126,48 @@ describe("runPipeline (mocked Claude client)", () => {
     expect(result.status).toBe("gave_up");
     const log = execSync("git log --oneline", { cwd: repoRoot }).toString();
     expect(log).not.toContain("create hello.txt");
+  });
+
+  it("does not retry for minor-only review findings", async () => {
+    const create = vi
+      .fn()
+      .mockResolvedValueOnce({
+        stop_reason: "tool_use",
+        content: [
+          {
+            type: "tool_use",
+            id: "tu_1",
+            name: "str_replace_based_edit_tool",
+            input: { command: "create", path: "hello.txt", file_text: "hi" },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ stop_reason: "end_turn", content: [{ type: "text", text: "done" }] });
+    const parse = vi
+      .fn()
+      .mockResolvedValue({ parsed_output: { findings: [{ summary: "nit", file: "hello.txt", severity: "minor" }] } });
+    const client = { messages: { create, parse } } as unknown as Anthropic;
+
+    const result = await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "create hello.txt");
+
+    expect(result).toEqual({ status: "committed" });
+    expect(parse).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives up instead of looping forever when the model never stops calling tools", async () => {
+    const create = vi.fn().mockImplementation(() =>
+      Promise.resolve({
+        stop_reason: "tool_use",
+        content: [{ type: "tool_use", id: `tu_${create.mock.calls.length}`, name: "bash", input: { command: "true" } }],
+      }),
+    );
+    const parse = vi.fn();
+    const client = { messages: { create, parse } } as unknown as Anthropic;
+
+    const result = await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "loop forever");
+
+    expect(result.status).toBe("gave_up");
+    expect(create.mock.calls.length).toBeLessThanOrEqual(MAX_TOOL_TURNS);
+    expect(parse).not.toHaveBeenCalled();
   });
 });
