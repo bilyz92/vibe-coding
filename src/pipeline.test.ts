@@ -170,4 +170,27 @@ describe("runPipeline (mocked Claude client)", () => {
     expect(create.mock.calls.length).toBeLessThanOrEqual(MAX_TOOL_TURNS);
     expect(parse).not.toHaveBeenCalled();
   });
+
+  it("gives the reviewer the task, not just the diff", async () => {
+    const create = vi
+      .fn()
+      .mockResolvedValueOnce({
+        stop_reason: "tool_use",
+        content: [
+          {
+            type: "tool_use",
+            id: "tu_1",
+            name: "str_replace_based_edit_tool",
+            input: { command: "create", path: "hello.txt", file_text: "hi" },
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ stop_reason: "end_turn", content: [{ type: "text", text: "done" }] });
+    const parse = vi.fn().mockResolvedValue({ parsed_output: { findings: [] } });
+    const client = { messages: { create, parse } } as unknown as Anthropic;
+
+    await runPipeline(client, repoRoot, loadRepoConfig(repoRoot), "create hello.txt containing hi");
+
+    expect(JSON.stringify(parse.mock.calls[0][0].messages)).toContain("create hello.txt containing hi");
+  });
 });

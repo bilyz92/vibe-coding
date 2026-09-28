@@ -4,12 +4,11 @@ on:
   issue_comment:
     types: [created]
 
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-
 jobs:
+  # Runs the agent. This job executes model-written code (the bash tool,
+  # lint/test), so it gets read-only repo access, no persisted git
+  # credentials and no GH_TOKEN. ANTHROPIC_API_KEY is withheld from every
+  # child process by src/env.ts.
   agent:
     # Cheap pre-filter only — the real authorization check (author_association)
     # happens in src/trigger.ts, since this job condition alone cannot be
@@ -18,8 +17,12 @@ jobs:
       startsWith(github.event.comment.body, '/vibe-code') &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -34,4 +37,57 @@ jobs:
       - run: npm run ci
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          VIBE_RESULT_DIR: ${{ runner.temp }}/vibe-result
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vibe-result
+          path: ${{ runner.temp }}/vibe-result
+
+  # Publishes the result. Holds the write token but runs no model-written
+  # code: a fresh checkout, `git am` of the patch, then git/gh only. The
+  # issue number and task come from the event, not from the artifact.
+  publish:
+    needs: agent
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: vibe-result
+          path: ${{ runner.temp }}/vibe-result
+
+      - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ github.event.issue.number }}
+          COMMENT: ${{ github.event.comment.body }}
+          RESULT: ${{ runner.temp }}/vibe-result
+        run: |
+          set -euo pipefail
+          task="$(printf '%s' "${COMMENT#/vibe-code}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+          case "$(cat "$RESULT/status")" in
+            committed)
+              git config user.name "vibe-coding-bot"
+              git config user.email "vibe-coding-bot@users.noreply.github.com"
+              branch="vibe-coding/issue-${ISSUE}-${GITHUB_RUN_ID}"
+              git checkout -b "$branch"
+              git am "$RESULT/change.patch"
+              git push -u origin "$branch"
+              url="$(gh pr create --head "$branch" --title "$task" --body "Closes #${ISSUE}"$'\n\n'"Task: ${task}")"
+              gh issue comment "$ISSUE" --body "Opened $url"
+              ;;
+            no_changes)
+              gh issue comment "$ISSUE" --body "No changes were needed for this task."
+              ;;
+            gave_up)
+              gh issue comment "$ISSUE" --body "Gave up: $(cat "$RESULT/reason")"
+              ;;
+            *)
+              echo "nothing to publish"
+              ;;
+          esac

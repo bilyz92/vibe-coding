@@ -51,12 +51,16 @@ committing locally — pushing/PR creation is manual in this mode.
 Comment `/vibe-code <task>` on an issue in a repo with `.github/workflows/vibe-code.yml` installed
 (this repo has it — that's the reference install) and, if you're OWNER/MEMBER/COLLABORATOR on that
 repo, the workflow runs the same pipeline as the CLI, then pushes a branch and opens a PR back to
-the issue. The author-association check happens in `src/trigger.ts`, not just the workflow's `if:`
+the issue. It is split into two jobs: `agent` runs the pipeline (and therefore model-written code)
+with read-only access and no GitHub token, and hands its result over as an artifact; `publish`
+holds the write token but only applies the patch and runs `git`/`gh`. Every child process the
+harness spawns has credential-like env vars (`*TOKEN*`, `*SECRET*`, `*PASSWORD*`, `*API_KEY*`)
+stripped — see `src/env.ts`. The author-association check happens in `src/trigger.ts`, not just the workflow's `if:`
 — a public repo's issue comments come from anyone, so the workflow condition is only a cheap
 pre-filter.
 
 Required repo secrets: `ANTHROPIC_API_KEY` (the default `GITHUB_TOKEN` covers `gh pr create` /
-`gh issue comment`, already scoped via the workflow's `permissions:` block).
+`gh issue comment`, and is only given to the `publish` job).
 
 To install on another repo: copy `.github/workflows/vibe-code.yml` and that repo's own
 `agent.config.json`, and add the `vibe-coding` package (or vendor `src/`) so `npm run ci` resolves.

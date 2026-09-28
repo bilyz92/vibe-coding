@@ -4,6 +4,7 @@ import { join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import type { RepoConfig } from "./config.js";
 import { commitChanges } from "./commit.js";
+import { childEnv } from "./env.js";
 import { implement, ToolTurnLimitError } from "./implement.js";
 import { review } from "./review.js";
 import { verify } from "./verify.js";
@@ -17,8 +18,8 @@ function gitDiff(repoRoot: string): string {
   // --intent-to-add marks new files as tracked (empty blob) without staging
   // their content, so `git diff HEAD` includes them as additions — a plain
   // `git diff HEAD` silently omits untracked files entirely.
-  execFileSync("git", ["add", "-A", "-N"], { cwd: repoRoot });
-  return execFileSync("git", ["diff", "HEAD"], { cwd: repoRoot, encoding: "utf-8" });
+  execFileSync("git", ["add", "-A", "-N"], { cwd: repoRoot, env: childEnv() });
+  return execFileSync("git", ["diff", "HEAD"], { cwd: repoRoot, encoding: "utf-8", env: childEnv() });
 }
 
 function systemPrompt(repoRoot: string, config: RepoConfig): string {
@@ -77,7 +78,7 @@ export async function runPipeline(
 
     // Minor findings are advisory: retrying on them can burn every retry on
     // nitpicks and end in gave_up for an otherwise correct change.
-    const findings = (await review(client, diff)).filter((f) => f.severity === "blocking");
+    const findings = (await review(client, task, diff)).filter((f) => f.severity === "blocking");
     if (findings.length > 0) {
       const summary = findings.map((f) => `- [${f.severity}] ${f.file}: ${f.summary}`).join("\n");
       messages.push({ role: "user", content: `Review found issues. Fix them.\n\n${summary}` });

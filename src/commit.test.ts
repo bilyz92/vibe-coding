@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -70,6 +70,22 @@ describe("commitChanges", () => {
     expect(result.committed).toBe(true);
     const tracked = execSync("git -c core.quotepath=off ls-files", { cwd: repoRoot }).toString();
     expect(tracked).toContain("tài liệu.ts");
+  });
+
+  it("does not expose the harness's credentials to git hooks", () => {
+    const hooks = join(repoRoot, "hooks");
+    mkdirSync(hooks);
+    const leak = join(repoRoot, "leaked.txt");
+    writeFileSync(join(hooks, "pre-commit"), `#!/bin/sh\nprintenv GH_TOKEN > "${leak}"\nexit 0\n`, { mode: 0o755 });
+    execSync("git config core.hooksPath hooks", { cwd: repoRoot });
+    writeFileSync(join(repoRoot, "app.ts"), "export {}");
+    process.env.GH_TOKEN = "gh-secret";
+    try {
+      commitChanges(repoRoot, config, "feat: add app.ts");
+    } finally {
+      delete process.env.GH_TOKEN;
+    }
+    expect(existsSync(leak) ? readFileSync(leak, "utf-8") : "").not.toContain("gh-secret");
   });
 
   it("does nothing when there are no changes", () => {

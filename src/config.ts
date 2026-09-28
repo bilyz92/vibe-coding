@@ -20,5 +20,9 @@ export function loadRepoConfig(repoRoot: string): RepoConfig {
     throw new Error(`agent.config.json not found at ${path}`);
   }
   const raw = JSON.parse(readFileSync(path, "utf-8"));
-  return RepoConfigSchema.parse(raw);
+  const config = RepoConfigSchema.parse(raw);
+  // The guardrails, the agent's instructions and git internals (hooks, config)
+  // are off-limits whatever the repo's config says — otherwise the model could
+  // loosen them for the next run.
+  return { ...config, denylist: [...config.denylist, "agent.config.json", config.agentsFile, ".git/**"] };
 }

@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { loadRepoConfig } from "./config.js";
+import { checkPath } from "./guard.js";
 
 let dir: string | undefined;
 
@@ -42,5 +43,24 @@ describe("loadRepoConfig", () => {
     dir = mkdtempSync(join(tmpdir(), "vibe-coding-config-"));
     const repoRoot = dir;
     expect(() => loadRepoConfig(repoRoot)).toThrow(/agent\.config\.json/);
+  });
+
+  it("always denylists the guardrail config, the agents file and .git, whatever the repo config says", () => {
+    dir = mkdtempSync(join(tmpdir(), "vibe-coding-config-"));
+    writeFileSync(
+      join(dir, "agent.config.json"),
+      JSON.stringify({
+        denylist: [],
+        bashAllowlist: ["git"],
+        lintCommand: "true",
+        testCommand: "true",
+        agentsFile: "CLAUDE.md",
+      }),
+    );
+
+    const config = loadRepoConfig(dir);
+    expect(checkPath(dir, config.denylist, "agent.config.json").ok).toBe(false);
+    expect(checkPath(dir, config.denylist, "CLAUDE.md").ok).toBe(false);
+    expect(checkPath(dir, config.denylist, ".git/hooks/pre-commit").ok).toBe(false);
   });
 });
