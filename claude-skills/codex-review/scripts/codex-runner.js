@@ -4,7 +4,7 @@
  * codex-runner.js — Cross-platform runner for Codex CLI (Node.js stdlib only).
  *
  * v13: Runner-centric architecture. JSON-only output (except version/init/render).
- * Subcommands: version, init, start, resume, poll, stop, finalize, status, render, _watchdog
+ * Subcommands: version, init, start, resume, poll, stop, finalize, status, render, pending, quota-check, wait-quota, _watchdog
  */
 
 import { spawn, spawnSync } from "node:child_process";
@@ -12,6 +12,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
+import { isQuotaError, retryAfterSeconds, addPending, listPending, markDone, probeQuota, sessionCodexHome, quotaCodexHome } from "./quota.mjs";
+import { stampApproval, changeHash } from "./gate.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -22,6 +24,7 @@ const EXIT_SUCCESS = 0;
 const EXIT_ERROR = 1;
 const EXIT_TIMEOUT = 2;
 const EXIT_TURN_FAILED = 3;
+const EXIT_QUOTA = 5;   // Codex out of quota / credits: see quota.mjs and the "Codex out of quota" section of protocol.md
 const EXIT_STALLED = 4;
 const EXIT_CODEX_NOT_FOUND = 5;
 
@@ -634,6 +637,9 @@ function parseOutputMarkdown(md, skillHint) {
   } else if (hasResponse) {
     // Standalone RESPONSE blocks (round 2+ security review)
     format = "codebase-validation";
+  } else if (/^### VERDICT\s*$/m.test(md)) {
+    // A verdict with no issues at all (a re-check that finds nothing left): a review with no blocks
+    format = "review";
   } else {
     return { format: "unknown", raw_markdown: md, parse_error: "No recognized format markers found" };
   }
@@ -824,6 +830,13 @@ function parseJsonlV13(stateDir, lastLineCount, elapsed, processAlive, timeoutVa
       reviewText,
       terminal: true,
     };
+  } else if (turnFailed && isQuotaError(turnFailedMsg)) {
+    return {
+      json: { status: "quota", round: currentRound, elapsed_seconds: elapsed, exit_code: EXIT_QUOTA, error: `Codex out of quota: ${sanitizeMsg(turnFailedMsg)}`, retry_after_seconds: retryAfterSeconds(turnFailedMsg), review: null, activities },
+      extractedThreadId,
+      reviewText: "",
+      terminal: true,
+    };
   } else if (turnFailed) {
     return {
       json: { status: "failed", round: currentRound, elapsed_seconds: elapsed, exit_code: EXIT_TURN_FAILED, error: `Codex turn failed: ${sanitizeMsg(turnFailedMsg)}`, review: null, activities },
@@ -847,6 +860,14 @@ function parseJsonlV13(stateDir, lastLineCount, elapsed, processAlive, timeoutVa
       let errorMsg = "Codex process exited unexpectedly";
       if (errContent) {
         errorMsg += ": " + sanitizeMsg(errContent.slice(0, 200));
+      }
+      if (isQuotaError(errContent)) {
+        return {
+          json: { status: "quota", round: currentRound, elapsed_seconds: elapsed, exit_code: EXIT_QUOTA, error: errorMsg, retry_after_seconds: retryAfterSeconds(errContent), review: null, activities },
+          extractedThreadId,
+          reviewText: "",
+          terminal: true,
+        };
       }
       return {
         json: { status: "failed", round: currentRound, elapsed_seconds: elapsed, exit_code: EXIT_ERROR, error: errorMsg, review: null, activities },
@@ -1362,6 +1383,9 @@ function cmdStart(argv) {
   const resolvedWorkingDir = state.working_dir || path.resolve(resolvedSessionDir, "..", "..", "..");
   const sessionId = state.session_id || path.basename(resolvedSessionDir);
   const skillName = state.skill_name || "";
+  // the Codex account with room (My Office keeps ~/.codex-now); kept for this session: its thread lives in that folder
+  const codexHome = sessionCodexHome();   // (explicit CODEX_HOME is pinned as well, so resume finds the thread without it)
+  if (codexHome) { process.env.CODEX_HOME = codexHome; updateState(resolvedSessionDir, { codex_home: codexHome }); }
 
   // Check codex in PATH
   const whichCmd = IS_WIN ? "where" : "which";
@@ -1513,6 +1537,7 @@ function cmdResume(argv) {
   const newRecoveryCount = isRecovery ? recoveryCount + 1 : recoveryCount;
   const effectiveStallThreshold = isRecovery ? Math.min(stallThreshold, 8) : stallThreshold;
 
+  if (prevState.codex_home) process.env.CODEX_HOME = prevState.codex_home;   // (its thread lives in that account's folder)
   const threadId = prevState.thread_id || "";
   const resolvedWorkingDir = prevState.working_dir || "";
   const sessionId = prevState.session_id || path.basename(resolvedSessionDir);
@@ -1791,6 +1816,10 @@ function cmdPoll(argv) {
           if (review.suggested_status) {
             currentRoundObj.verdict = review.suggested_status;
           }
+          // the commit gate: the exact changes Codex approved, taken now (finalize stamps them only if still these)
+          if (currentRoundObj.verdict === "APPROVE" && state.skill_name === "codex-impl-review" && state.working_dir) {
+            try { currentRoundObj.approved_hash = changeHash(state.working_dir); } catch { /* not a git repo */ }
+          }
         }
 
         writeRounds(stateDir, rounds);
@@ -1979,6 +2008,14 @@ function cmdFinalize(argv) {
     return EXIT_ERROR;
   }
 
+  // The commit gate (gate.mjs / commit-gate.mjs): an impl-review that Codex itself approved in its last round stamps
+  // these exact changes as reviewed. A verdict passed on stdin doesn't count: only Codex's own.
+  // Only the last round counts, and only for the changes as they were when it approved (approved_hash).
+  const lastRound = rounds[rounds.length - 1];
+  if (state.skill_name === "codex-impl-review" && lastRound?.verdict === "APPROVE" && lastRound.approved_hash && state.working_dir) {
+    try { stampApproval(state.working_dir, lastRound.approved_hash); } catch { /* not a git repo, or git trouble: no stamp */ }
+  }
+
   // Build meta.json
   const meta = {
     skill: state.skill_name || "",
@@ -2093,6 +2130,63 @@ function cmdWatchdog(argv) {
 }
 
 // ============================================================
+// Codex out of quota: owed reviews (PROGRESS.md) and waiting for quota (quota.mjs)
+// ============================================================
+
+/** pending add <repo_dir> --skill --scope --branch --reason | pending list <repo_dir> | pending done <repo_dir> <id> */
+function cmdPending(argv) {
+  const [op, repoDir, id] = argv;
+  if (!repoDir || !fs.existsSync(repoDir)) { process.stdout.write(JSON.stringify({ error: "pending: a repo directory that exists is required" }) + "\n"); return EXIT_ERROR; }
+  if (op === "add") {
+    const { values } = parseArgs({ args: argv.slice(2), options: { skill: { type: "string" }, scope: { type: "string" }, branch: { type: "string" }, reason: { type: "string" } }, strict: false });
+    const newId = addPending(repoDir, { skill: values.skill, scope: values.scope, branch: values.branch, reason: values.reason });
+    process.stdout.write(JSON.stringify({ id: newId, file: path.join(repoDir, "PROGRESS.md") }) + "\n");
+    return EXIT_SUCCESS;
+  }
+  if (op === "list") {
+    const all = listPending(repoDir);
+    process.stdout.write(JSON.stringify({ pending: all.filter((x) => !x.done), done: all.filter((x) => x.done).length }) + "\n");
+    return EXIT_SUCCESS;
+  }
+  if (op === "done") {
+    const ok = markDone(repoDir, String(id || ""));
+    process.stdout.write(JSON.stringify({ ok }) + "\n");
+    return ok ? EXIT_SUCCESS : EXIT_ERROR;
+  }
+  process.stdout.write(JSON.stringify({ error: "pending: add | list | done" }) + "\n");
+  return EXIT_ERROR;
+}
+
+/** quota-check: one probe -> { status: ok | quota | error }. wait-quota: probe every --interval s (default 900)
+    until Codex answers (exit 0), or --max-hours passes (default 12, exit EXIT_TIMEOUT). Each probe is one tiny
+    Codex request; when Codex says how long to wait, the next probe waits that long instead. */
+async function cmdQuota(command, argv) {
+  const { values } = parseArgs({ args: argv, options: { interval: { type: "string" }, "max-hours": { type: "string" } }, strict: false });
+  const codex = resolveCodexCommand();
+  const explicitHome = process.env.CODEX_HOME;
+  const useHome = () => {   // (another account with room counts as quota back; a selector gone -> Codex's default)
+    const h = quotaCodexHome(explicitHome);
+    if (h) process.env.CODEX_HOME = h; else delete process.env.CODEX_HOME;
+  };
+  useHome();
+  if (command === "quota-check") {
+    const r = await probeQuota({ command: codex });
+    process.stdout.write(JSON.stringify(r) + "\n");
+    process.exitCode = r.status === "ok" ? EXIT_SUCCESS : r.status === "quota" ? EXIT_QUOTA : EXIT_ERROR;
+    return;
+  }
+  const interval = Math.max(60, Number(values.interval) || 900), deadline = Date.now() + (Number(values["max-hours"]) || 12) * 3600e3;
+  for (let tries = 1; ; tries++) {
+    useHome();
+    const r = await probeQuota({ command: codex });
+    if (r.status === "ok") { process.stdout.write(JSON.stringify({ status: "ok", tries }) + "\n"); process.exitCode = EXIT_SUCCESS; return; }
+    const wait = Math.max(interval, (r.retry_after_seconds || 0) + 30) * 1000;
+    if (Date.now() + wait > deadline) { process.stdout.write(JSON.stringify({ status: "timeout", tries, last: r }) + "\n"); process.exitCode = EXIT_TIMEOUT; return; }
+    await new Promise((res) => setTimeout(res, wait));
+  }
+}
+
+// ============================================================
 // CLI
 // ============================================================
 
@@ -2135,6 +2229,13 @@ function main() {
     case "_watchdog":
       exitCode = cmdWatchdog(rest);
       break;
+    case "pending":
+      exitCode = cmdPending(rest);
+      break;
+    case "quota-check":
+    case "wait-quota":
+      cmdQuota(command, rest);
+      return;   // (async: sets process.exitCode itself)
     default:
       process.stderr.write(
         "codex-runner.js — Cross-platform runner for Codex CLI (v13)\n\n" +
@@ -2147,7 +2248,11 @@ function main() {
         "  node codex-runner.js stop <session_dir>\n" +
         "  echo JSON | node codex-runner.js finalize <session_dir>\n" +
         "  node codex-runner.js status <session_dir>\n" +
-        "  echo JSON | node codex-runner.js render --skill <name> --template <name> --skills-dir <path>\n",
+        "  echo JSON | node codex-runner.js render --skill <name> --template <name> --skills-dir <path>\n" +
+        "  node codex-runner.js pending add <repo_dir> --skill <name> --scope <scope> --branch <branch> --reason <text>\n" +
+        "  node codex-runner.js pending list <repo_dir> | pending done <repo_dir> <id>\n" +
+        "  node codex-runner.js quota-check\n" +
+        "  node codex-runner.js wait-quota [--interval <s>] [--max-hours <h>]\n",
       );
       exitCode = command ? EXIT_ERROR : EXIT_SUCCESS;
       break;

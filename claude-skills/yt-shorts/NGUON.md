@@ -1,0 +1,1 @@
+Nguồn: github.com/Jakeschincariol/youtube-agent-skill @ a2feb2104981a375ffd4f87ee04f4f5344ac43c6 (MIT, Jake Schincariol). Cài nguyên bản 21/11/2026 sau 2 lượt kiểm (script chỉ đọc file, không mạng, không ghi).

@@ -1,0 +1,24 @@
+# CI cho repo skills: chạy trên MR và khi push master.
+# Không có bước deploy: mỗi máy tự kéo master qua _bootstrap/sync.sh.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+stages:
+  - validate
+
+skills-json-python:
+  stage: validate
+  image: python:3.12.16-alpine@sha256:e6dae589c1c05976188fd3bd019afd091445fc533ed2ea29001beddc7368a9c8
+  script:
+    - python3 _bootstrap/ci-validate.py
+
+shellcheck:
+  stage: validate
+  image: koalaman/shellcheck-alpine:v0.10.0
+  script:
+    - find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 -r shellcheck -S warning

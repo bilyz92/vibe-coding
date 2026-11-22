@@ -1,0 +1,75 @@
+{
+  "name": "phong-nghien-cuu",
+  "title": "Phòng Nghiên cứu thị trường",
+  "handles": "Nghiên cứu thị trường chiến lược: sản phẩm và xu hướng, đối thủ và giá, khách hàng, chính sách sàn và luật Việt Nam về thương mại điện tử, dữ liệu cá nhân, thuế; báo cáo có nguồn và ngày, cất vào kho tri thức",
+  "skill": "phong-nghien-cuu",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "budgetUsd": 10,
+  "external": "Chỉ đọc: không đăng nhập bằng tài khoản của anh, không cào dữ liệu trái điều khoản trang nguồn, không nhắn tin, bình luận hay tham gia nhóm thay anh, không mua dữ liệu hay công cụ trả phí khi anh chưa duyệt; không dùng tên hay logo Cole/Fago.",
+  "roles": [
+    {
+      "agent": "nc-lead",
+      "title": "Trưởng phòng Nghiên cứu",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "nc-san-pham",
+      "title": "Nghiên cứu sản phẩm & xu hướng",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "nc-doi-thu",
+      "title": "Nghiên cứu đối thủ & giá",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "nc-khach-hang",
+      "title": "Nghiên cứu khách hàng",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "nc-chinh-sach",
+      "title": "Theo dõi chính sách sàn & luật",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "nc-kiem-chung",
+      "title": "Kiểm chứng nguồn",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "nc-thu-ky",
+      "title": "Thư ký",
+      "kind": "thu-ky",
+      "model": "haiku"
+    },
+    {
+      "agent": "nc-hoc-hoi",
+      "title": "Học hỏi & cải tiến",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "nc-phan-bien",
+      "title": "Người phản biện",
+      "kind": "kiem",
+      "model": "opus"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "name": "phong-van-hanh",
+  "title": "Phòng Vận hành shop",
+  "handles": "Vận hành cửa hàng online: sản phẩm Shopify, đơn hàng và xưởng in Printdoors, vận đơn, chăm sóc người mua, soát giá lãi hạn giao và chính sách; shop Small Space Fixes và khách Làm hộ",
+  "skill": "phong-van-hanh",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep"
+  ],
+  "budgetUsd": 10,
+  "external": "Không bao giờ trả tiền (không orderPay, không thanh toán đơn xưởng, không mua gì); không gửi tin hay email cho người mua hoặc nhà cung cấp khi anh chưa duyệt; không chạy hay tăng ngân sách quảng cáo; không dùng tên hay logo Cole/Fago; chỉ dùng ảnh của mình hoặc đã có quyền bằng văn bản; mọi thay đổi trên shop là đề xuất chờ anh duyệt, trừ loại anh đã cho phép trong memory.",
+  "roles": [
+    {
+      "agent": "vh-lead",
+      "title": "Trưởng phòng Vận hành",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "vh-san-pham",
+      "title": "Quản lý sản phẩm",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "vh-don-xuong",
+      "title": "Điều phối đơn & xưởng",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "vh-cskh",
+      "title": "CSKH người mua",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "vh-kiem-soat",
+      "title": "Kiểm soát",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "vh-thu-ky",
+      "title": "Thư ký",
+      "kind": "thu-ky",
+      "model": "haiku"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "name": "phong-thiet-ke",
+  "title": "Phòng Thiết kế",
+  "handles": "Thiết kế: file in sản phẩm POD theo lô và mockup, màn hình app và website, bộ ảnh quảng cáo, giữ DESIGN.md từng sản phẩm",
+  "skill": "phong-thiet-ke",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep"
+  ],
+  "budgetUsd": 10,
+  "external": "Không tự đăng hay gửi thiết kế cho ai, không tải lên xưởng in hay cửa hàng; không mua font, ảnh, mockup trả phí; không dùng tên hay logo Cole/Fago; chỉ dùng ảnh của mình hoặc đã có quyền bằng văn bản.",
+  "roles": [
+    {
+      "agent": "tk-lead",
+      "title": "Trưởng phòng Thiết kế",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "tk-pod",
+      "title": "Thiết kế sản phẩm POD",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "tk-ui",
+      "title": "Thiết kế UI/UX",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "tk-anh-qc",
+      "title": "Ảnh sản phẩm & khuôn quảng cáo",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "tk-kiem-duyet",
+      "title": "Kiểm duyệt thiết kế",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "tk-thu-ky",
+      "title": "Thư ký",
+      "kind": "thu-ky",
+      "model": "haiku"
+    }
+  ]
+}

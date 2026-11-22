@@ -1,0 +1,54 @@
+{
+  "name": "phong-an-ninh",
+  "title": "Phòng An ninh",
+  "handles": "Rà soát an ninh hằng ngày, chỉ đọc: quyền file bí mật, cổng mở, tiến trình lạ, đăng nhập, đĩa, sao lưu; test cách ly và bảo mật của app, thư viện có lỗ hổng, secret lọt vào git; tài khoản, token, allowlist; báo cáo ngày có mức độ, việc sửa giao Phòng Kỹ sư",
+  "skill": "phong-an-ninh",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Bash",
+    "Glob",
+    "Grep"
+  ],
+  "budgetUsd": 5,
+  "external": "Chỉ đọc và báo cáo: không tự sửa cấu hình hệ thống, firewall, SSH, docker; không tắt, khởi động lại hay xoá dịch vụ, container, tiến trình; không đụng project của Cole (~/project/cole*, crm, hrm-cole, container cole-*, apollo, beecube, Fami và các project khác của Cole) ngoài việc ghi vào báo cáo; không in secret, token, mật khẩu ra báo cáo hay màn hình (chỉ ghi tên file, quyền, ngày); không quét mạng hay máy khác; không cài công cụ chưa qua kiểm hai lớp; không gửi gì ra ngoài.",
+  "roles": [
+    {
+      "agent": "an-lead",
+      "title": "Trưởng phòng An ninh",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "an-he-thong",
+      "title": "Rà soát hệ thống",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "an-ung-dung",
+      "title": "Rà soát ứng dụng",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "an-tai-khoan",
+      "title": "Rà soát tài khoản & quyền",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "an-kiem-soat",
+      "title": "Kiểm soát",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "an-thu-ky",
+      "title": "Thư ký",
+      "kind": "thu-ky",
+      "model": "haiku"
+    }
+  ]
+}

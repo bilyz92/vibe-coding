@@ -1,6 +1,7 @@
-# Định dạng: <marketplace_source> | <plugin@marketplace>
+# Định dạng: <marketplace_source> | <plugin@marketplace> | <commit ghim (40 ký tự hex)>
 # marketplace_source: repo github hoặc git url để `claude plugin marketplace add`
-anthropics/claude-plugins-official | frontend-design@claude-plugins-official
-anthropics/claude-plugins-official | skill-creator@claude-plugins-official
-anthropics/claude-plugins-official | superpowers@claude-plugins-official
-https://github.com/bilyz92/andrej-karpathy-skills.git | andrej-karpathy-skills@karpathy-skills
+# commit ghim: install.sh chỉ cài khi HEAD của marketplace tải về đúng commit này.
+anthropics/claude-plugins-official | frontend-design@claude-plugins-official | fa4eb54397ee2faccb6940512a19c017cb1337f3
+anthropics/claude-plugins-official | skill-creator@claude-plugins-official | fa4eb54397ee2faccb6940512a19c017cb1337f3
+anthropics/claude-plugins-official | superpowers@claude-plugins-official | fa4eb54397ee2faccb6940512a19c017cb1337f3
+https://github.com/bilyz92/andrej-karpathy-skills.git | andrej-karpathy-skills@karpathy-skills | 2c606141936f1eeef17fa3043a72095b4765b9c2

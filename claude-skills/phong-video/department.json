@@ -1,0 +1,49 @@
+{
+  "name": "phong-video",
+  "title": "Phòng Video",
+  "handles": "Làm video: giới thiệu sản phẩm, quảng cáo ngắn, hướng dẫn; viết kịch bản, dựng bằng code, lồng tiếng, xuất file",
+  "skill": "phong-video",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep"
+  ],
+  "budgetUsd": 10,
+  "external": "Không tự đăng video lên YouTube, TikTok hay mạng xã hội; không tự mua nhạc, ảnh, giọng đọc.",
+  "roles": [
+    {
+      "agent": "video-lead",
+      "title": "Trưởng phòng Video",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "video-bien-kich",
+      "title": "Biên kịch",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "video-dung",
+      "title": "Dựng video",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "video-kiem-duyet",
+      "title": "Kiểm duyệt",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "video-thu-ky",
+      "title": "Thư ký",
+      "kind": "thu-ky",
+      "model": "haiku"
+    }
+  ]
+}

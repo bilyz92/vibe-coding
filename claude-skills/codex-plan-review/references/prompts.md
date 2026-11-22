@@ -45,6 +45,10 @@ Read the plan file directly at: {PLAN_PATH}
 {SESSION_CONTEXT}
 
 ## Instructions
+Token budget (no round cap — keep each round lean):
+- Report only what changes behaviour or carries risk: bugs, regressions, security, data loss, performance, real maintainability problems.
+- Pure style / naming / formatting preferences: at most ONE issue titled "[optional] style notes" with Severity low. Optional issues never block APPROVE.
+
 1. Read the plan file at the path above directly and thoroughly.
 2. Check the plan against the acceptance criteria in Session Context.
 3. Identify gaps, risks, missing edge cases, and sequencing flaws.
@@ -74,6 +78,11 @@ Read the updated plan file directly at: {PLAN_PATH}
 {DISPUTED_ITEMS}
 
 ## Instructions
+Token budget (no round cap — keep each round lean):
+- Inspect only what changed since your last round (the fixed files and code they touch). Do not re-review unchanged code you already reviewed.
+- Do not raise new style/naming nitpicks in later rounds; "[optional]" issues never block APPROVE.
+- For each disputed issue: accept the rebuttal (withdraw it), or give NEW concrete evidence (file:line, failing input). Do not repeat an argument already made — if you have nothing new, withdraw it or keep it unchanged so the stalemate shows.
+
 1. Re-read the current plan file at the path above — do NOT rely on memory of the previous version.
 2. Verify that fixed issues are actually resolved in the updated plan.
 3. Do NOT re-open issues marked as fixed unless you find a regression in the updated plan.

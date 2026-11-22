@@ -24,7 +24,7 @@ json_esc() { printf '%s' "$1" | node -e 'let d="";process.stdin.on("data",c=>d+=
 - Validate: `init` output must start with `CODEX_SESSION:`. `start`/`resume` must return valid JSON. `CODEX_NOT_FOUND`->tell user install codex.
 - `status === "completed"` means **Codex's turn is done** -- NOT that the debate is over. MUST check Loop Decision table.
 - Loop: Do NOT exit unless consensus or stalemate. No round cap.
-- Errors: `failed`->retry once (re-poll 15s). `timeout`->report partial, suggest lower effort. `stalled`+recoverable->`stop`->recovery `resume`->poll; not recoverable->report partial. Cleanup sequencing: `finalize`+`stop` ONLY after recovery resolves.
+- Errors: `quota` (out of quota/credits)->no retry: finalize+stop, `pending add` to PROGRESS.md, carry on with other work, background `wait-quota`, re-run when it exits (`references/protocol.md` § Codex out of quota). `failed`->retry once (re-poll 15s). `timeout`->report partial, suggest lower effort. `stalled`+recoverable->`stop`->recovery `resume`->poll; not recoverable->report partial. Cleanup sequencing: `finalize`+`stop` ONLY after recovery resolves.
 - Cleanup: ALWAYS run `finalize` + `stop`, even on failure/timeout.
 - Runner manages all session state -- NEVER read/write session files manually.
 - **Information barrier**: Claude MUST complete independent analysis BEFORE reading Codex output.

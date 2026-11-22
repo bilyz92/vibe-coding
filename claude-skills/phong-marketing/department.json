@@ -1,0 +1,71 @@
+{
+  "name": "phong-marketing",
+  "title": "Phòng Marketing / Bán hàng",
+  "handles": "Marketing và bán hàng: trang dịch vụ, bài viết, nội dung mạng xã hội, tin nhắn tiếp cận khách, giáo án workshop, bảng giá, theo dõi khách tiềm năng",
+  "skill": "phong-marketing",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch",
+    "ToolSearch",
+    "mcp__claude-in-chrome__tabs_context_mcp",
+    "mcp__claude-in-chrome__tabs_create_mcp",
+    "mcp__claude-in-chrome__tabs_close_mcp",
+    "mcp__claude-in-chrome__navigate",
+    "mcp__claude-in-chrome__get_page_text",
+    "mcp__claude-in-chrome__read_page",
+    "mcp__claude-in-chrome__find"
+  ],
+  "budgetUsd": 10,
+  "external": "Chỉ soạn sẵn: không tự đăng bài, không gửi tin nhắn hay email cho ai, không chạy quảng cáo, không tạo tài khoản; mọi bản đăng/gửi do anh làm.",
+  "roles": [
+    {
+      "agent": "mkt-lead",
+      "title": "Trưởng phòng Marketing",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "mkt-copywriter",
+      "title": "Người viết nội dung",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "mkt-web",
+      "title": "Người làm trang",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "mkt-kiem-duyet",
+      "title": "Kiểm duyệt nội dung",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "mkt-thu-ky",
+      "title": "Thư ký phòng Marketing",
+      "kind": "thu-ky",
+      "model": "haiku"
+    },
+    {
+      "agent": "mkt-thiet-ke-anh",
+      "title": "Thiết kế ảnh",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "mkt-nghien-cuu",
+      "title": "Nghiên cứu thị trường Facebook và quảng cáo",
+      "kind": "lam",
+      "model": "sonnet"
+    }
+  ]
+}

@@ -10,3 +10,6 @@ _bootstrap/.opt-cli-tried
 gstack/
 .agents/
 .claude/
+synced/
+.codex-review/
+auto-upgrade/instincts/projects/

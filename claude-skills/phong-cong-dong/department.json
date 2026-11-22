@@ -1,0 +1,63 @@
+{
+  "name": "phong-cong-dong",
+  "title": "Phòng Cộng đồng",
+  "handles": "Cộng đồng chính danh: kế hoạch tương tác tuần trong nhóm, soạn trả lời và bài chia sẻ cho tài khoản thật của anh, quản lý KOC KOL và hàng mẫu, theo dõi nơi người ta nhắc tới Small Space Fixes và hệ thống",
+  "skill": "phong-cong-dong",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "budgetUsd": 10,
+  "external": "Không bao giờ tự đăng, bình luận, nhắn tin hay gửi thư: chỉ soạn bản nháp, anh duyệt và anh tự đăng hoặc gửi từ tài khoản thật; không bao giờ tạo hay dùng tài khoản nào (không nick clone, không tài khoản phụ); không seeding ảo, không đánh giá giả, không spam (NĐ 91/2020), không nhắn tin khi người ta chưa hỏi; chỉ dùng đánh giá thật khi người mua đồng ý; bài tài trợ ghi rõ có tài trợ; không dùng tên hay logo Cole/Fago.",
+  "roles": [
+    {
+      "agent": "cd-lead",
+      "title": "Trưởng phòng Cộng đồng",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "cd-noi-dung",
+      "title": "Soạn nội dung tương tác",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "cd-koc",
+      "title": "Quản lý KOC/KOL",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "cd-theo-doi",
+      "title": "Theo dõi thương hiệu",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "cd-kiem-duyet",
+      "title": "Kiểm duyệt",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "cd-thu-ky",
+      "title": "Thư ký",
+      "kind": "thu-ky",
+      "model": "haiku"
+    },
+    {
+      "agent": "cd-page-group",
+      "title": "Quản trị page & group",
+      "kind": "lam",
+      "model": "sonnet"
+    }
+  ]
+}
