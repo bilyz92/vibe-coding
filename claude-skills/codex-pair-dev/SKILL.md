@@ -1,6 +1,6 @@
 ---
 name: codex-pair-dev
-description: Vòng lặp pair-programming Claude ↔ Codex cho một task code từ đầu đến commit. Codex phân tích yêu cầu → Claude lên plan → Codex phản biện plan → Claude code → Claude test → Codex verify → Claude check lại → commit. Dùng khi muốn làm một task code có Codex review đối kháng ở cả khâu phân tích, plan và implementation, kèm bước test riêng trước khi commit.
+description: Vòng lặp pair-programming Claude ↔ Codex cho một task code từ đầu đến commit. Codex phân tích yêu cầu → Claude lên plan → Codex phản biện plan → (UI: đọc DESIGN.md) → Claude code → Claude test → (UI: kiểm trên app thật, chụp ảnh) → Codex verify → Claude check lại → commit. Dùng khi muốn làm một task code có Codex review đối kháng ở cả khâu phân tích, plan và implementation, kèm bước test riêng trước khi commit.
 ---
 
 # Codex Pair Dev — vòng lặp Claude ↔ Codex
@@ -24,13 +24,15 @@ Task nhỏ/rõ ràng → dùng [[dev-workflow]] cho nhẹ. Chỉ cần review co
 1. **Nhận task** → verify: tóm tắt lại yêu cầu bằng 1–2 câu; nêu giả định; hỏi nếu mơ hồ.
 2. **Codex phân tích yêu cầu** → invoke `/codex-think-about` với câu hỏi "yêu cầu này thực chất đòi gì, edge case/rủi ro nào?". Verify: có kết luận đồng thuận hoặc bất đồng được ghi rõ.
 3. **Rà soát phạm vi ảnh hưởng** → grep toàn repo tìm MỌI nơi dùng logic/symbol sẽ đổi; liệt kê call-site + màn hình/route, phân biệt cái giống-tên-khác-nghĩa. Verify: danh sách đầy đủ nơi phải sửa đồng bộ, không sót; ghi vào plan để review cùng.
-4. **Claude lên Plan** → dùng Plan agent, ghi ra `plan.md` (có headings: Goals, Steps, Impact/nơi phải đổi đồng bộ, Acceptance). Verify: plan có tiêu chí nghiệm thu kiểm chứng được.
-5. **Codex check & phản biện plan** → invoke `/codex-plan-review` trên `plan.md`. Verify: chạy tới khi APPROVE hoặc stalemate; sửa các điểm Codex nêu hợp lý vào plan, phản biện điểm sai.
-6. **Claude code** → implement surgical theo plan, sửa ĐỒNG BỘ mọi call-site ở bước 3; áp [[clean-code]] cho code mới (tên/hàm/trùng lặp/pattern đúng chỗ). Verify: lint + typecheck + build pass, có output.
-7. **Test** → viết test bám theo Acceptance của plan: bug fix có test tái hiện (fail-trước/pass-sau); feature có test cho happy path + edge case. Chạy test liên quan + regression suite quanh vùng sửa. Verify: test pass, có output; test mới đã chứng minh fail được trước khi sửa.
-8. **Codex verify** → invoke `/codex-impl-review` trên diff chưa commit. Verify: Codex đã review xong, findings được liệt kê.
-9. **Claude check lại** → với mỗi finding: sửa nếu đúng, phản biện nếu sai; lặp tới consensus/stalemate. Verify: chạy lại test sau mỗi sửa.
-10. **Commit** → khi được yêu cầu / đã đồng thuận. Verify: message theo Conventional Commits; nếu ở branch mặc định thì tạo branch trước; chỉ commit khi test xanh.
+4. **(Chỉ khi task đụng giao diện) Bám giao diện đã duyệt + design system** → lấy bản giao diện user đã duyệt (mockup/ảnh/link/file HTML — hỏi đường dẫn nếu chưa có) làm chuẩn; tìm `DESIGN.md` ở root/thư mục app; có thì đọc trọn, chuẩn bị mục "UI Acceptance" cho `plan.md` (dẫn đúng bản giao diện đã duyệt; chỗ mockup khác `DESIGN.md` thì ghi rõ để hỏi user): token dùng (màu/font/radius/spacing), Do's/Don'ts liên quan, các trạng thái phải có (loading/rỗng/lỗi), bề rộng phải thử (desktop + màn hẹp/mobile theo breakpoint của app). Không có `DESIGN.md` → bám style/component sẵn có của app, chỉ đề xuất tạo file, không tự tạo. Verify: `plan.md` có UI Acceptance kiểm chứng được bằng mắt; không có giá trị màu/spacing tự chế ngoài token.
+5. **Claude lên Plan** → dùng Plan agent, ghi ra `plan.md` (có headings: Goals, Steps, Impact/nơi phải đổi đồng bộ, Acceptance, + UI Acceptance ở bước 4 nếu task đụng giao diện). Verify: plan có tiêu chí nghiệm thu kiểm chứng được.
+6. **Codex check & phản biện plan** → invoke `/codex-plan-review` trên `plan.md`. Verify: chạy tới khi APPROVE hoặc stalemate; sửa các điểm Codex nêu hợp lý vào plan, phản biện điểm sai.
+7. **Claude code** → implement surgical theo plan, sửa ĐỒNG BỘ mọi call-site ở bước 3; áp [[clean-code]] cho code mới (tên/hàm/trùng lặp/pattern đúng chỗ). Verify: lint + typecheck + build pass, có output.
+8. **Test** → viết test bám theo Acceptance của plan: bug fix có test tái hiện (fail-trước/pass-sau); feature có test cho happy path + edge case. Chạy test liên quan + regression suite quanh vùng sửa. Verify: test pass, có output; test mới đã chứng minh fail được trước khi sửa.
+9. **(Chỉ khi task đụng giao diện) Kiểm trên app thật** → chạy app (skill `run` hoặc lệnh dev của project), mở bằng Chrome (`claude-in-chrome`) hoặc giao agent `tester`: đi đúng luồng trong UI Acceptance, chụp ảnh từng trạng thái và từng bề rộng, đọc console (không lỗi mới), so với `DESIGN.md`. Cần soát kỹ (màn hình mới, thay đổi lớn) → thêm `/ui-ux-review`. Lỗi tìm được → sửa rồi quay lại bước 8. Verify: có ảnh chụp làm bằng chứng cho mọi mục UI Acceptance; console sạch.
+10. **Codex verify** → invoke `/codex-impl-review` trên diff chưa commit. Verify: Codex đã review xong, findings được liệt kê.
+11. **Claude check lại** → với mỗi finding: sửa nếu đúng, phản biện nếu sai; lặp tới consensus/stalemate. Verify: chạy lại test sau mỗi sửa (sửa đụng UI → chụp lại màn liên quan).
+12. **Commit** → khi được yêu cầu / đã đồng thuận. Verify: message theo Conventional Commits; nếu ở branch mặc định thì tạo branch trước; chỉ commit khi test xanh.
 
 ## Rationalizations — các cớ cần phản bác
 
@@ -41,6 +43,8 @@ Task nhỏ/rõ ràng → dùng [[dev-workflow]] cho nhẹ. Chỉ cần review co
 | "Codex bảo sửa nhưng nó nhầm, cứ sửa cho xong" | Phản biện điểm sai là một phần của quy trình; sửa mù làm hỏng code đúng. |
 | "Test xanh sẵn rồi, khỏi chạy lại sau khi sửa" | Mỗi lần sửa theo finding là một thay đổi mới chưa được verify. |
 | "Skip Codex verify, code rõ ràng mà" | Bỏ second opinion là bỏ chính giá trị của skill này. |
+| "Unit test UI xanh rồi, khỏi mở trình duyệt" | Unit test không thấy lệch bố cục, tràn chữ, vỡ màn hẹp, lỗi console; chỉ ảnh chụp app thật mới chứng minh được. |
+| "Chọn màu/khoảng cách cho đẹp là được" | Giá trị ngoài `DESIGN.md` làm giao diện lệch hệ thống; dùng token có sẵn. |
 
 ## Red Flags — dừng lại
 
@@ -49,6 +53,7 @@ Task nhỏ/rõ ràng → dùng [[dev-workflow]] cho nhẹ. Chỉ cần review co
 - Sửa theo finding của Codex mà không hiểu/không đồng ý (sửa mù).
 - Commit khi còn finding chưa giải quyết hoặc test chưa xanh.
 - Nói "đã xong" mà không có output test/build.
+- Task UI mà nói "xong" khi chưa có ảnh chụp app thật.
 
 ## Verification checklist
 
@@ -56,7 +61,9 @@ Task nhỏ/rõ ràng → dùng [[dev-workflow]] cho nhẹ. Chỉ cần review co
 - [ ] Codex đã phân tích yêu cầu (`/codex-think-about`) — có kết luận.
 - [ ] `plan.md` có Goals/Steps/Acceptance kiểm chứng được.
 - [ ] `/codex-plan-review` chạy tới APPROVE/stalemate; plan đã cập nhật.
+- [ ] (UI) Đã đọc `DESIGN.md` (nếu có); `plan.md` có UI Acceptance.
 - [ ] Code surgical, đúng plan.
+- [ ] (UI) Đã kiểm trên app thật: ảnh chụp mọi trạng thái/bề rộng, console sạch.
 - [ ] Có test bám Acceptance: bug fix có test tái hiện (fail-trước/pass-sau); feature có happy path + edge case.
 - [ ] Lint/typecheck/build/test pass — có output.
 - [ ] `/codex-impl-review` chạy xong; mọi finding đã sửa hoặc phản biện.
