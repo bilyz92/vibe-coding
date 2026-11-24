@@ -1,0 +1,16 @@
+{
+  "_ghiChu": "[ƯỚC LƯỢNG] Hạn mức token mỗi tuần theo phòng, đặt ngày 2026-11-10 từ 1 tuần số liệu thật (Trợ lý giám đốc ~125 triệu, Kỹ sư ~87 triệu, Video ~3 triệu, Marketing ~2,7 triệu) cộng dư; phòng Lead chạy Opus và việc nặng đặt cao hơn. Chỉnh lại sau 2 tuần số liệu thật (khoảng 2026-11-24). department.json có tokenTuan thì dùng số đó thay số ở đây.",
+  "_tokenTinh": "Token hạn mức = vào + ghi cache + ra; không tính đọc cache.",
+  "tokenTuan": {
+    "tro-ly-giam-doc": 150000000,
+    "phong-ky-su": 100000000,
+    "phong-video": 6000000,
+    "phong-marketing": 6000000,
+    "phong-nghien-cuu": 6000000,
+    "phong-thiet-ke": 5000000,
+    "phong-van-hanh": 5000000,
+    "phong-cong-dong": 4000000,
+    "phong-nhan-su": 2000000,
+    "khac": 1000000
+  }
+}

@@ -52,6 +52,10 @@ You are Codex acting as a strict code reviewer.
 {SESSION_CONTEXT}
 
 ## Instructions
+Token budget (no round cap — keep each round lean):
+- Report only what changes behaviour or carries risk: bugs, regressions, security, data loss, performance, real maintainability problems.
+- Pure style / naming / formatting preferences: at most ONE issue titled "[optional] style notes" with Severity low. Optional issues never block APPROVE.
+
 1. Focus on correctness, regressions, edge cases, security, and maintainability.
 2. Do not modify code directly.
 3. Output each finding as ISSUE-{N} using the EXACT format below.
@@ -83,6 +87,10 @@ You are Codex acting as a strict code reviewer.
 {SESSION_CONTEXT}
 
 ## Instructions
+Token budget (no round cap — keep each round lean):
+- Report only what changes behaviour or carries risk: bugs, regressions, security, data loss, performance, real maintainability problems.
+- Pure style / naming / formatting preferences: at most ONE issue titled "[optional] style notes" with Severity low. Optional issues never block APPROVE.
+
 1. Focus on correctness, regressions, edge cases, security, and maintainability.
 2. Do not modify code directly.
 3. Output each finding as ISSUE-{N} using the EXACT format below.
@@ -107,6 +115,11 @@ You are Codex acting as a strict code reviewer.
 {DISPUTED_ITEMS}
 
 ## Instructions
+Token budget (no round cap — keep each round lean):
+- Inspect only what changed since your last round (the fixed files and code they touch). Do not re-review unchanged code you already reviewed.
+- Do not raise new style/naming nitpicks in later rounds; "[optional]" issues never block APPROVE.
+- For each disputed issue: accept the rebuttal (withdraw it), or give NEW concrete evidence (file:line, failing input). Do not repeat an argument already made — if you have nothing new, withdraw it or keep it unchanged so the stalemate shows.
+
 1. Re-read the current diff — do NOT rely on memory of previous state.
 2. Verify that fixed issues are actually resolved in the updated code.
 3. Do NOT re-open issues marked as fixed unless you find a regression.
@@ -139,6 +152,11 @@ You are Codex acting as a strict code reviewer.
 {DISPUTED_ITEMS}
 
 ## Instructions
+Token budget (no round cap — keep each round lean):
+- Inspect only what changed since your last round (the fixed files and code they touch). Do not re-review unchanged code you already reviewed.
+- Do not raise new style/naming nitpicks in later rounds; "[optional]" issues never block APPROVE.
+- For each disputed issue: accept the rebuttal (withdraw it), or give NEW concrete evidence (file:line, failing input). Do not repeat an argument already made — if you have nothing new, withdraw it or keep it unchanged so the stalemate shows.
+
 1. Re-read the branch diff against {BASE_BRANCH} — do NOT rely on memory of previous state.
 2. Verify that fixed issues are actually resolved in the committed code.
 3. Do NOT re-open issues marked as fixed unless you find a regression.

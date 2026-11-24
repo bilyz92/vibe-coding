@@ -1,0 +1,54 @@
+{
+  "name": "phong-ky-su",
+  "title": "Phòng Kỹ sư phần mềm",
+  "handles": "Việc code: tính năng, sửa lỗi, refactor, review, deploy trong một repo git",
+  "skill": "phong-ky-su",
+  "status": "active",
+  "allowedTools": "all",
+  "budgetUsd": 20,
+  "external": "Chỉ push nhánh, mở PR và merge trong repo của việc; không đăng hay gửi gì cho người khác.",
+  "roles": [
+    {
+      "agent": "ba",
+      "title": "BA / Phân tích yêu cầu",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "planner",
+      "title": "Trưởng nhóm",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "coding",
+      "title": "Kỹ sư",
+      "kind": "lam",
+      "model": "opus"
+    },
+    {
+      "agent": "tester",
+      "title": "Tester (QA)",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "release-ops",
+      "title": "Release / Ops",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "thu-ky",
+      "title": "Thư ký",
+      "kind": "thu-ky",
+      "model": "haiku"
+    },
+    {
+      "agent": "truc-production",
+      "title": "Trực production (SSH, log)",
+      "kind": "kiem",
+      "model": "sonnet"
+    }
+  ]
+}

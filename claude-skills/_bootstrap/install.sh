@@ -8,11 +8,16 @@
 #   1. Copy agents (_agents/*.md) sang ~/.claude/agents nếu thiếu.
 #   2. Cài plugin trong plugins.manifest nếu chưa có (thêm marketplace khi cần).
 # KHÔNG ghi đè file đã có → an toàn chạy lại nhiều lần.
+# Mọi thứ tải về đều ghim phiên bản: marketplace phải đúng commit ghi trong plugins.manifest, CLI cài đúng
+# phiên bản dưới đây (codex còn kiểm sha512 tarball). Nâng phiên bản = sửa các dòng này qua MR có người duyệt.
 
 set -uo pipefail
 SKILLS_DIR="$HOME/.claude/skills"
 SELF_DIR="$SKILLS_DIR/_bootstrap"
 changed=0
+CODEX_VERSION="0.166.0"
+CODEX_INTEGRITY="sha512-2Szlp1l1cz5TX1ccpX4Zok3DZrot9xeZe0km+6/1v8JmqxADwyJxKBJah4dBymkwtS25j/u6dipJusTOI97Z8Q=="
+BROWSER_USE_VERSION="0.13.1"
 
 echo "== Bootstrap Claude skills/agents/plugins =="
 
@@ -32,8 +37,8 @@ if ! command -v claude >/dev/null 2>&1; then
 else
   installed="$(claude plugin list 2>/dev/null || echo '')"
   added_mp=""
-  while IFS='|' read -r mp plugin; do
-    mp="$(echo "$mp" | xargs)"; plugin="$(echo "$plugin" | xargs)"
+  while IFS='|' read -r mp plugin pin; do
+    mp="$(echo "$mp" | xargs)"; plugin="$(echo "$plugin" | xargs)"; pin="$(echo "$pin" | xargs)"
     case "$mp" in ''|\#*) continue;; esac   # bỏ dòng trống/comment
     [ -z "$plugin" ] && continue
     if echo "$installed" | grep -q "${plugin%@*}"; then
@@ -43,6 +48,12 @@ else
     if ! echo "$added_mp" | grep -q "$mp"; then
       claude plugin marketplace add "$mp" >/dev/null 2>&1 || true
       added_mp="$added_mp $mp"
+    fi
+    # Marketplace chỉ ghim được nhánh/tag (clone --branch) nên kiểm commit sau khi tải: lệch → không cài.
+    head="$(git -C "$HOME/.claude/plugins/marketplaces/${plugin#*@}" rev-parse HEAD 2>/dev/null)"
+    if ! [[ "$pin" =~ ^[0-9a-f]{40}$ ]] || [ "$head" != "$pin" ]; then
+      echo "  ! không cài $plugin: marketplace ở commit ${head:-?}, manifest ghim ${pin:-chưa ghim} — kiểm tay rồi sửa manifest qua MR"
+      continue
     fi
     if claude plugin install "$plugin" >/dev/null 2>&1; then
       echo "  + plugin: $plugin"; changed=1
@@ -58,14 +69,14 @@ fi
 if command -v browser-use >/dev/null 2>&1; then
   : # đã có, bỏ qua
 elif command -v pipx >/dev/null 2>&1; then
-  if pipx install browser-use >/dev/null 2>&1; then
+  if pipx install "browser-use==$BROWSER_USE_VERSION" >/dev/null 2>&1; then
     echo "  + browser-use (pipx)"; changed=1
   else
     echo "  ! không cài được browser-use qua pipx (cần Python>=3.11) — cài tay nếu cần"
   fi
 elif command -v pip3 >/dev/null 2>&1 || command -v pip >/dev/null 2>&1; then
   pipcmd="$(command -v pip3 || command -v pip)"
-  if "$pipcmd" install --user browser-use >/dev/null 2>&1; then
+  if "$pipcmd" install --user "browser-use==$BROWSER_USE_VERSION" >/dev/null 2>&1; then
     echo "  + browser-use (pip --user)"; changed=1
   else
     echo "  ! không cài được browser-use qua pip (cần Python>=3.11) — cài tay nếu cần"
@@ -80,11 +91,19 @@ fi
 if command -v codex >/dev/null 2>&1; then
   : # đã có
 elif command -v npm >/dev/null 2>&1; then
-  if npm install -g @openai/codex >/dev/null 2>&1; then
+  # Tải tarball, tự tính sha512 so với bản ghim, rồi cài đúng tarball đã kiểm (không để npm tải lại).
+  tgz_dir="$(mktemp -d)"
+  tgz="$(cd "$tgz_dir" && npm pack --silent "@openai/codex@$CODEX_VERSION" 2>/dev/null | tail -n 1)"
+  got=""
+  [ -n "$tgz" ] && [ -f "$tgz_dir/$tgz" ] && got="sha512-$(openssl dgst -sha512 -binary "$tgz_dir/$tgz" | base64 | tr -d '\n')"
+  if [ "$got" != "$CODEX_INTEGRITY" ]; then
+    echo "  ! tarball @openai/codex@$CODEX_VERSION không khớp sha512 đã ghim (${got:-không tải được}) — không cài"
+  elif npm install -g "$tgz_dir/$tgz" >/dev/null 2>&1; then
     echo "  + codex CLI (@openai/codex) — nhớ chạy 'codex login' để dùng được"; changed=1
   else
     echo "  ! không cài được @openai/codex qua npm — cài tay nếu cần /codex-*"
   fi
+  rm -rf "$tgz_dir"
 else
   echo "  ! chưa có npm — bỏ qua Codex CLI. Cài node + 'npm i -g @openai/codex' nếu cần /codex-*."
 fi

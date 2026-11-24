@@ -1,0 +1,4 @@
+so,giay,hinh_nguon,chu,ghi_chu
+1,3.0,~/company/pod/anh-sp/<ten-anh>.jpg,<chữ hook trên màn hình>,hook (dạng: <dang_hook>); lời đọc: <câu đọc nếu có>
+2,2.4,~/company/pod/anh-sp/<ten-anh>.jpg,<tên sản phẩm · thông số đã xác nhận>,nguồn thông số: <brief hoặc trang bán>
+3,3.0,~/company/pod/anh-sp/<ten-anh>.jpg,<lời kêu gọi>,cảnh cuối; thiếu hình thì ghi hinh_nguon=placeholder và báo lại

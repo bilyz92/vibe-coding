@@ -131,9 +131,30 @@ Optionally include `"scope":"..."` and `"issues":{...}` in finalize JSON. Report
 | `timeout` | Report partial results from `review.raw_markdown`, suggest lower effort. Run cleanup. |
 | `stalled` + `recoverable === true` | `stop` -> prepend recovery note -> `resume --recovery` -> poll (30s, 15s+). |
 | `stalled` + `recoverable === false` | Report partial results, suggest lower effort. Run cleanup. |
+| `quota` | Codex out of quota/credits: no retry -> see **Codex out of quota** below. |
 | `CODEX_NOT_FOUND` | Tell user to install codex. |
 
 **Cleanup sequencing**: Run `finalize` + `stop` ONLY after recovery resolves (success or second failure). Do NOT finalize before recovery attempt.
+
+## Saving tokens (no round cap; stalemate is still the only early exit)
+- **Before round 1, Claude does the cheap checks itself:** lint, typecheck, the tests around the change, and a self-review of the diff; fix the obvious before Codex reads it.
+- **One resume per round:** fix every accepted issue first, then send a single rebuttal — never resume after each fix.
+- **Round 2+ effort:** one level below round 1, never below `medium` (xhigh→high, high→medium, medium→medium): later rounds only verify fixes.
+- **No duplicate reviews:** when `codex-impl-review` already returned APPROVE for exactly these changes (nothing changed since), skip `codex-commit-review` / `codex-pr-review` on the same content unless the user asks.
+- **Docs-only changes** (only .md/.txt/comments): Claude's self-review is enough; say so instead of starting Codex.
+
+## Codex out of quota (status `quota`)
+`poll` returns `status: "quota"` (exit_code 5) when Codex is out of quota or credits (also check `start`/`resume` errors for "out of credits", "usage limit", "rate limit", "quota"). It is not a transient failure: retrying burns time and the user's patience.
+1. **No retry, no waiting in the session.** `finalize` (verdict `"quota"`) + `stop` the session.
+2. **Record the owed review** in the repo's PROGRESS.md (section `## Chờ Codex review`):
+   `node "$RUNNER" pending add "$PWD" --skill <this-skill> --scope <working-tree|branch|plan|full|…> --branch "$(git branch --show-current)" --reason "<the error>"` -> prints its id.
+3. **Tell the user in one line** (what is owed, the id, why) and **carry on** — the user's rule (2026-11-01, every project): an owed review does not hold the work up.
+   - **Commit is allowed** once the owed entry exists (the commit gate hook lets it through with a warning).
+   - **Push → PR → auto-merge → deploy go ahead as usual, on two conditions:** (a) a **fallback review by an independent Claude reviewer** (a fresh subagent that sees only the diff, e.g. the `code-review` skill) found nothing blocking — fix what it finds first; (b) CI is green. Say "review dự phòng — chờ Codex re-review (<id>)" in the commit/PR text.
+   - When quota is back (step 5), Codex reviews what was merged (`git diff <merge-base>..<merge commit>` or the PR's range); valid findings are fixed in a follow-up PR, which goes through the normal flow.
+4. **Wait for quota in the background, once per session:** Bash with `run_in_background`: `node "$RUNNER" wait-quota --interval 900` (probes Codex every 15 min, or after the wait Codex names; exits 0 when Codex answers, after 12 h by default otherwise). Do not start a second one while it runs.
+5. **When it exits 0 — or at the start of any later session (`node "$RUNNER" pending list "$PWD"`) —** re-run every owed review with its skill, fix/rebut as usual, then `node "$RUNNER" pending done "$PWD" <id>`.
+6. `wait-quota` timed out: tell the user what is still owed. `node "$RUNNER" quota-check` probes once on demand.
 
 ## Flavor Text Convention
 Load `references/flavor-text.md` at skill start. Pick 1 random message per trigger from matching pool -- never repeat within session. Display as `> {emoji} {message}` blockquote. Replace `{N}`, `{TOTAL}`, `{CHUNK}`, `{ROUND}` with actual values. User can disable with "no flavor" or "skip humor". Only trigger on first poll per round (avoid spam).

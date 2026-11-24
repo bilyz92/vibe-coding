@@ -50,7 +50,7 @@ done
 echo "-- Plugins (manifest)"
 if command -v claude >/dev/null 2>&1; then
   installed="$(claude plugin list 2>/dev/null || echo '')"
-  while IFS='|' read -r _mp plugin; do
+  while IFS='|' read -r _mp plugin _pin; do
     plugin="$(echo "$plugin" | xargs)"; name="${plugin%@*}"
     case "$_mp" in ''|\#*) continue;; esac; [ -z "$plugin" ] && continue
     if echo "$installed" | grep -q "$name"; then pass "plugin: $name"; else fw "thiếu plugin: $name (chạy install.sh)"; fi

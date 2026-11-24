@@ -1,0 +1,35 @@
+{
+  "env": {
+    "MKT_NGHIEN_CUU_SANDBOX": "1"
+  },
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyRead": [
+        "~/"
+      ],
+      "allowRead": [
+        "~/company/marketing/SU-THAT-DA-XAC-NHAN.md",
+        "~/company/marketing/quang-cao/vao",
+        "~/company/marketing/web-tho",
+        "~/company/tri-thuc",
+        "~/.claude/skills/kho-du-lieu",
+        "~/.claude/company/kho",
+        "~/.gitconfig",
+        "~/.nvm/versions/node",
+        "~/.local/lib/python3.8/site-packages"
+      ],
+      "allowWrite": [
+        "~/company/marketing/nghien-cuu",
+        "~/company/marketing/quang-cao/ra"
+      ]
+    },
+    "network": {
+      "allowedDomains": [],
+      "strictAllowlist": true
+    }
+  }
+}

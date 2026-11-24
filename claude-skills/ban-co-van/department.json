@@ -1,0 +1,60 @@
+{
+  "name": "ban-co-van",
+  "title": "Ban Cố vấn",
+  "handles": "Cố vấn chuyên gia cho anh: bản ghi nhớ cố vấn hằng tuần ba việc nên làm ba việc nên dừng cho từng dự án Small Space Fixes, Trợ lý bán hàng, Dịch vụ; ý kiến trước quyết định lớn về chiến lược SaaS, thương mại điện tử POD, tăng trưởng, AI",
+  "skill": "ban-co-van",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Bash",
+    "Glob",
+    "Grep"
+  ],
+  "budgetUsd": 10,
+  "external": "Chỉ khuyên: không lên web, không đăng nhập, không mua dữ liệu hay khoá học, không nhắn tin hay gửi gì cho ai; không đọc hay dùng dữ liệu project của Cole; không dùng tên hay logo Cole/Fago; lời khuyên được nhận thành phiếu do Trợ lý giám đốc giao.",
+  "roles": [
+    {
+      "agent": "cv-lead",
+      "title": "Trưởng ban Cố vấn",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "cv-chien-luoc",
+      "title": "Cố vấn chiến lược & SaaS",
+      "kind": "lam",
+      "model": "opus"
+    },
+    {
+      "agent": "cv-tmdt",
+      "title": "Cố vấn TMĐT xuyên biên giới & POD",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "cv-marketing",
+      "title": "Cố vấn marketing tăng trưởng",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "cv-ai",
+      "title": "Cố vấn AI & công nghệ",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "cv-phan-bien",
+      "title": "Phản biện",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "cv-thu-ky",
+      "title": "Thư ký",
+      "kind": "thu-ky",
+      "model": "haiku"
+    }
+  ]
+}

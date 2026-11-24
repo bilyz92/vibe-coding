@@ -70,6 +70,7 @@ Sau khi setup máy, với mỗi dự án đang làm dở:
 | Review Codex | `codex-*` (impl/plan/pr/security/commit/think/parallel/codebase) |
 | UI | `baseline-ui`, `fixing-accessibility`, `fixing-metadata`, `ui-ux-review`, `ui-ux-pro-max` |
 | Bảo mật/Deploy | `vibesec`, `safe-deploy` |
+| Context (từ ECC, MIT) | `context-budget`, `strategic-compact` |
 | Agents | `_agents/coding.md`, `_agents/planner.md` |
 | Orchestration | `_orchestration/big-task.workflow.mjs` |
 | Bootstrap | `_bootstrap/install.sh`, `_bootstrap/plugins.manifest` |

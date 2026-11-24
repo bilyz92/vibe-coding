@@ -1,0 +1,63 @@
+{
+  "name": "phong-seo",
+  "title": "Phòng SEO",
+  "handles": "SEO website: nghiên cứu và phân tích từ khoá, chiến lược SEO, phân tích đối thủ và thị trường trên kết quả tìm kiếm, tối ưu onpage (tiêu đề SEO, meta, alt ảnh, liên kết nội bộ, schema), link building chính danh, brief nội dung chuẩn SEO cho Marketing viết, đề xuất sửa cấu trúc kỹ thuật cho Kỹ sư, theo dõi ranking traffic Search Console và báo cáo hiệu quả; cho Small Space Fixes, web Trợ lý bán hàng và khách Làm hộ",
+  "skill": "phong-seo",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "budgetUsd": 8,
+  "external": "Không mua link, không PBN, không trao đổi link hàng loạt, không spam bình luận hay diễn đàn, không nội dung nhồi từ khoá hay trang cửa ngõ; thư mời đặt link, xin bài khách mời, đăng ký danh bạ là bản nháp anh duyệt và anh tự gửi; không tạo tài khoản; không tiêu tiền cho công cụ SEO trả phí (nếu cần thì trình anh kèm giá); chỉ đọc trang công khai, không cào trái điều khoản; sửa onpage trên Shopify SSF (SEO title, meta description, alt ảnh) phải được anh duyệt bảng trước/sau (sau khi kiểm duyệt ĐẠT ĐỀ XUẤT), sao lưu trước, ghi sau, đọc lại so sánh với bảng đã duyệt (lệch thì khôi phục từ bản sao lưu), rồi kiểm duyệt ĐẠT SAU GHI, đổi tên sản phẩm, giá, mô tả bán hàng thì chuyển Phòng Vận hành; sửa code site chuyển Phòng Kỹ sư; viết bài chuyển Phòng Marketing; không dùng tên hay logo Cole/Fago.",
+  "roles": [
+    {
+      "agent": "seo-lead",
+      "title": "Trưởng phòng SEO",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "seo-tu-khoa",
+      "title": "Nghiên cứu từ khoá và đối thủ",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "seo-onpage",
+      "title": "Onpage và kỹ thuật",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "seo-link",
+      "title": "Link building",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "seo-theo-doi",
+      "title": "Theo dõi và báo cáo",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "seo-kiem-duyet",
+      "title": "Kiểm duyệt SEO",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "seo-thu-ky",
+      "title": "Thư ký Phòng SEO",
+      "kind": "thu-ky",
+      "model": "haiku"
+    }
+  ]
+}

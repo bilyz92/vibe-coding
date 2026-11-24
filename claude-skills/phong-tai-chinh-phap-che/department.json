@@ -1,0 +1,55 @@
+{
+  "name": "phong-tai-chinh-phap-che",
+  "title": "Phòng Tài chính – Pháp chế",
+  "handles": "Tài chính và pháp chế công ty: sổ thu chi có chứng từ theo dự án, đối chiếu PayPal Shopify sao kê, lãi lỗ tháng; thuế hộ kinh doanh, thuế thu nhập cá nhân khấu trừ hoa hồng, hoá đơn điện tử, lịch nộp; hợp đồng mẫu, điều khoản sử dụng, chính sách dữ liệu, soát quảng cáo, nhãn hiệu; chỉ bản nháp",
+  "skill": "phong-tai-chinh-phap-che",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep"
+  ],
+  "budgetUsd": 10,
+  "external": "Chỉ bản nháp và sổ sách: không tự ký, không tự nộp tờ khai hay hồ sơ cho cơ quan nhà nước, không tự chuyển tiền hay thanh toán, không gửi văn bản cho ai; không lưu số thẻ, mật khẩu hay mã OTP ngân hàng (chứng từ có số tài khoản thì che, chỉ giữ 4 số cuối); văn bản pháp lý quan trọng và tờ khai thuế phải được luật sư hay kế toán có chứng chỉ (thuê ngoài) duyệt trước khi ký hay nộp; không dùng tên hay logo Cole/Fago.",
+  "roles": [
+    {
+      "agent": "tc-lead",
+      "title": "Trưởng phòng Tài chính – Pháp chế",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "tc-ke-toan",
+      "title": "Kế toán",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "tc-thue",
+      "title": "Thuế",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "tc-phap-che",
+      "title": "Pháp chế",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "tc-kiem-soat",
+      "title": "Kiểm soát",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "tc-thu-ky",
+      "title": "Thư ký",
+      "kind": "thu-ky",
+      "model": "haiku"
+    }
+  ]
+}

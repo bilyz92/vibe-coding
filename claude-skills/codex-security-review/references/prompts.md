@@ -101,6 +101,10 @@ Perform a comprehensive security analysis focusing on OWASP Top 10 2021 vulnerab
 - [ ] Insecure file uploads
 - [ ] Open redirects
 
+## Token budget (no round cap — keep each round lean)
+- Report only real, exploitable or clearly risky findings with evidence (file:line, input, impact).
+- Generic hardening ideas / best-practice reminders: at most ONE issue titled "[optional] hardening notes" with Severity low. Optional issues never block APPROVE.
+
 ## Output Format
 
 For each security finding, use this structure:
@@ -238,6 +242,10 @@ You are continuing a security review debate.
 {DISPUTED_ITEMS}
 
 ## Your Task
+Token budget (no round cap — keep each round lean):
+- Inspect only what changed since your last round (the fixed files and code they touch). Do not re-audit unchanged code.
+- For each disputed finding: accept the rebuttal (withdraw it), or give NEW concrete evidence (an exploit path, file:line). Do not repeat an argument already made.
+
 1. Review the fixes applied for accepted issues
 2. Respond to rebuttals for disputed issues
 3. Identify any new security concerns introduced by fixes

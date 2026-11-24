@@ -1,0 +1,14 @@
+ponytail-debt, cài thẳng theo tro-ly-giam-doc/references/tao-phong.md mục 3.6.
+
+Nguồn: https://github.com/DietrichGebert/ponytail
+Thư mục gốc: skills/ponytail-debt
+Commit ghim: 96608e078b2d5ea607c5c3b8b5a54d1c1fba6846
+Cây đã kiểm trước khi thêm LICENSE, NOTICE: 16c3b7953629510afa8f061f0fefa61a104e3020
+Giấy phép: MIT, chép nguyên văn từ LICENSE gốc vào file LICENSE
+
+Dòng bản quyền, nguyên văn (LICENSE:3):
+Copyright (c) 2026 DietrichGebert
+
+Dòng đã sửa: không.
+File đã bỏ: không.
+Không cài trọn plugin ponytail, không có hook.

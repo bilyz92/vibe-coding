@@ -13,11 +13,25 @@ if git remote get-url origin >/dev/null 2>&1; then
   branch="$(git branch --show-current 2>/dev/null)"
   if [ "$branch" = "master" ] && [ -z "$(git status --porcelain)" ]; then
     before="$(git rev-parse HEAD 2>/dev/null)"
-    if git pull --ff-only --quiet origin master >>"$LOG" 2>&1; then
-      after="$(git rev-parse HEAD 2>/dev/null)"
-      [ "$before" != "$after" ] && echo "[$ts] auto-update $before → $after" >>"$LOG"
+    # Khoá tin cậy: GNUPGHOME riêng NGOÀI repo, chỉ chứa khoá công khai được phép ký master.
+    # Có thư mục này → chỉ kéo khi đầu master mới có chữ ký hợp lệ của một khoá trong đó.
+    trust="$HOME/.config/agent-coding/gnupg"
+    if ! git fetch --quiet origin master >>"$LOG" 2>&1; then
+      echo "[$ts] pull bỏ qua (offline / chưa auth)" >>"$LOG"
     else
-      echo "[$ts] pull bỏ qua (không ff / offline / chưa auth)" >>"$LOG"
+      new="$(git rev-parse FETCH_HEAD 2>/dev/null)"
+      if [ "$new" = "$before" ]; then
+        :
+      elif [ -d "$trust" ] && ! GNUPGHOME="$trust" git verify-commit "$new" >>"$LOG" 2>&1; then
+        echo "[$ts] KHÔNG kéo $new: thiếu chữ ký hợp lệ của khoá tin cậy ($trust)" >>"$LOG"
+      else
+        [ -d "$trust" ] || echo "[$ts] CẢNH BÁO: chưa cấu hình khoá tin cậy ($trust) — kéo không kiểm chữ ký" >>"$LOG"
+        if git merge --ff-only --quiet "$new" >>"$LOG" 2>&1; then
+          echo "[$ts] auto-update $before → $new" >>"$LOG"
+        else
+          echo "[$ts] pull bỏ qua (không ff)" >>"$LOG"
+        fi
+      fi
     fi
   else
     echo "[$ts] skip pull (branch=$branch, hoặc tree bẩn)" >>"$LOG"

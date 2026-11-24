@@ -1,0 +1,15 @@
+Skill "pricing" lấy từ https://github.com/coreyhaines31/marketingskills
+Commit ghim: 88c79f6528a9347420e57ceb1fff9a60de651768
+Giấy phép: MIT, xem file LICENSE.
+Dòng bản quyền (nguyên văn, đã đọc): Copyright (c) 2025 Corey Haines
+Tác giả gốc không xác nhận hay bảo trợ bản này.
+Cách nhận: cài thẳng (mode installed) theo tro-ly-giam-doc/references/tao-phong.md mục 3.6.
+
+Dòng đã sửa:
+- SKILL.md:12-21: thêm mục "Ranh giới bắt buộc" (luật chỉ soạn nháp, không gửi, không tiêu tiền, không tự gọi mạng hay dịch vụ ngoài) để luật áp cả khi gọi skill thẳng
+- SKILL.md:26: đổi đường dẫn file ngữ cảnh gốc sang `~/company/marketing/SU-THAT-DA-XAC-NHAN.md`
+
+File đã bỏ (nội dung còn nhắc tới file nào trong danh sách này thì bỏ qua):
+- evals/
+
+Khi dùng trong Phòng Marketing: luật trong phong-marketing/SKILL.md đè lên nội dung skill. Kết quả viết bằng tiếng Việt, theo thị trường Việt Nam.

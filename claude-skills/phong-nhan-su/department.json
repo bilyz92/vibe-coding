@@ -1,0 +1,48 @@
+{
+  "name": "phong-nhan-su",
+  "title": "Phòng Nhân sự",
+  "handles": "Quản lý đội AI của My Company: sơ đồ tổ chức, đánh giá hiệu suất từng vai và phòng hằng tuần, đề xuất lập gộp giải thể vai hay phòng, đào tạo bằng đề xuất sửa hướng dẫn, hồ sơ chuyển thử việc sang chính thức",
+  "skill": "phong-nhan-su",
+  "status": "probation",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Bash",
+    "Glob",
+    "Grep"
+  ],
+  "budgetUsd": 5,
+  "external": "Chỉ đọc file của phòng khác; chỉ ghi báo cáo của phòng mình; không tự tạo, sửa, gộp hay xoá vai, phòng, skill, agent: mọi thay đổi cơ cấu là đề xuất gửi Trợ lý giám đốc đi qua luồng scaffold; không cài skill ngoài; không gửi gì ra ngoài.",
+  "roles": [
+    {
+      "agent": "ns-lead",
+      "title": "Trưởng phòng Nhân sự",
+      "kind": "lead",
+      "model": "opus"
+    },
+    {
+      "agent": "ns-danh-gia",
+      "title": "Đánh giá hiệu suất",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "ns-dao-tao",
+      "title": "Đào tạo",
+      "kind": "lam",
+      "model": "sonnet"
+    },
+    {
+      "agent": "ns-kiem-soat",
+      "title": "Kiểm soát",
+      "kind": "kiem",
+      "model": "sonnet"
+    },
+    {
+      "agent": "ns-thu-ky",
+      "title": "Thư ký",
+      "kind": "thu-ky",
+      "model": "haiku"
+    }
+  ]
+}

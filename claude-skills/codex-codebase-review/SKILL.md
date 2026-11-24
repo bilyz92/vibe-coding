@@ -23,7 +23,7 @@ json_esc() { printf '%s' "$1" | node -e 'let d="";process.stdin.on("data",c=>d+=
 - Stdin: `printf '%s' "$PROMPT" | node "$RUNNER" ...` -- NEVER `echo`. JSON via heredoc.
 - Validate: `init` output must start with `CODEX_SESSION:`. `start`/`resume` must return valid JSON. `CODEX_NOT_FOUND`->tell user install codex.
 - `status === "completed"` means **Codex's turn is done** -- NOT that the review is over. Parse results and continue.
-- Errors: `failed`->retry once, still fails->skip chunk. >50% failed->warn user. `timeout`->report partial. `stalled`+recoverable->`stop`->recovery `resume`->poll; not recoverable->report partial. Cleanup sequencing: `finalize`+`stop` ONLY after recovery resolves.
+- Errors: `quota` (out of quota/credits)->no retry: finalize+stop, `pending add` to PROGRESS.md, carry on with other work, background `wait-quota`, re-run when it exits (`references/protocol.md` § Codex out of quota). `failed`->retry once, still fails->skip chunk. >50% failed->warn user. `timeout`->report partial. `stalled`+recoverable->`stop`->recovery `resume`->poll; not recoverable->report partial. Cleanup sequencing: `finalize`+`stop` ONLY after recovery resolves.
 - Cleanup: ALWAYS `finalize` + `stop` ALL tracked sessions, even on failure/timeout.
 - Runner manages all session state -- NEVER read/write session files manually.
 - For poll intervals and detailed error flows -> `Read references/protocol.md`
